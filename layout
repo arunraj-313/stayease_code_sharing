@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+    <style>
+        body {
+            background: #071028;
+            color: white;
+        }
+
+        /* NAVBAR */
+        .navbar-custom {
+            background: linear-gradient(135deg, #071028, #0b1c3f);
+            border-bottom: 1px solid #cfa23a55;
+            box-shadow: 0 4px 12px rgba(0,0,0,.4);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            color: #f4c542 !important;
+        }
+
+        .navbar-nav > li > a {
+            color: #e0b64b !important;
+            font-weight: 600;
+        }
+
+        .navbar-nav > li > a:hover {
+            color: white !important;
+        }
+
+        /* Login Button */
+        .btn-login {
+            background: #f4c542;
+            color: #071028;
+            font-weight: 700;
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        .btn-login:hover {
+            background: white;
+            color: black;
+        }
+
+        /* MODAL STYLING */
+        .modal-content {
+            border-radius: 14px;
+            padding: 20px;
+            background: #13254f;
+            border: 1px solid #cfa23a55;
+            box-shadow: 0 0 20px rgba(0,0,0,.6);
+        }
+
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.75);
+        }
+
+        .form-control {
+            background: #0b1c3f;
+            color: white;
+            border: 1px solid #cfa23a55;
+        }
+
+        .form-control:focus {
+            background: white;
+            color: black;
+            border-color: #f4c542;
+            box-shadow: none;
+        }
+
+        .btn-login-submit {
+            background: #28a745;
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .btn-login-submit:hover {
+            background: #1f8b39;
+        }
+
+        .forgot-link {
+            float: right;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .forgot-link:hover {
+            color: white;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-inverse navbar-fixed-top navbar-custom">
+        <div class="container">
+
+            <div class="navbar-header">
+                @Html.ActionLink("StayEase", "Index", "Home", null, new { @class = "navbar-brand" })
+            </div>
+
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+                </ul>
+
+                <div class="navbar-right" style="margin-top:8px;">
+
+                    @if (Session["FullName"] != null)
+                    {
+                        <span style="color:#e0b64b; margin-right:10px;">
+                            Welcome, @Session["FullName"]!
+                        </span>
+
+                        <button class="btn btn-danger"
+                                onclick="window.location.href='@Url.Action("Logout", "Account")'">
+                            Logout
+                        </button>
+                    }
+                    else
+                    {
+                        <!-- LOGIN POPUP OPENER -->
+                        <button class="btn-login" data-toggle="modal" data-target="#loginModal">
+                            Login
+                        </button>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- MAIN CONTENT -->
+    <div class="container body-content" style="margin-top:80px;">
+        @RenderBody()
+    </div>
+
+
+
+    <!-- LOGIN POPUP MODAL -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <h3 class="text-center" style="color:#f4c542; font-weight:700;">Login</h3>
+
+                @using (Html.BeginForm("Login", "Account", FormMethod.Post))
+                {
+                    <label>Email</label>
+                    @Html.TextBox("Email", null, new { @class = "form-control" })
+
+                    <label>Password</label>
+                    @Html.Password("Password", new { @class = "form-control" })
+
+                    <a href="@Url.Action("ForgotPassword", "Account")" class="forgot-link">Forgot Password?</a>
+
+                    <br /><br />
+
+                    <button type="submit" class="btn btn-login-submit btn-block">Login</button>
+
+                    <div class="text-center mt-2">
+                        <a href="@Url.Action("Register","Account")" style="color:#f4c542;">New user? Register</a>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+
+
+
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+</body>
+</html>
