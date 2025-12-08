@@ -1,0 +1,39 @@
+﻿@model StayEasePG.Models.FoodMenu
+@{
+    ViewBag.Title = "Edit Food Menu";
+}
+<h2>Edit Food Menu</h2>
+@using (Html.BeginForm())
+{
+    @Html.HiddenFor(m => m.MenuID)
+    @Html.HiddenFor(m => m.PGID, new { Value = ViewBag.PGID })
+    @Html.HiddenFor(m => m.RoomID, new { Value = ViewBag.RoomID })
+    <div class="form-group">
+        <label>Day of Week</label>
+        @Html.DropDownListFor(
+            m => m.DayOfWeek,
+            new SelectList(ViewBag.Days, Model.DayOfWeek),
+            "Select Day",
+            new { @class = "form-control" }
+        )
+    </div>
+    <div class="form-group">
+        <label>Meal Type</label>
+        @Html.DropDownListFor(
+            m => m.MealType,
+            new SelectList(ViewBag.Meals, Model.MealType),
+            "Select Meal",
+            new { @class = "form-control" }
+        )
+    </div>
+    <div class="form-group">
+        <label>Menu Items</label>
+        @Html.TextAreaFor(
+            m => m.MenuItems,
+            new { @class = "form-control", placeholder = "Comma-separated items e.g., Idli,Dosa,Sambhar", rows = 3 }
+        )
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a href="@Url.Action("MenuList", "FoodMenu", new { pgid = ViewBag.PGID, roomid = ViewBag.RoomID })" class="btn btn-secondary">Cancel</a>
+}

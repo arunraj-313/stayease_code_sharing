@@ -1,0 +1,40 @@
+﻿@model IEnumerable<StayEasePG.Models.PG_Rules>
+@{
+    ViewBag.Title = "Rules List";
+}
+<h2>Rules List</h2>
+<p>
+    @Html.ActionLink("Add New Rule", "AddRules", null, new { @class = "btn btn-primary" })
+</p>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>PG Name</th>
+            <th>Room Type</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>Visitors Allowed</th>
+            <th>Gate Closing</th>
+            <th>Notice Period</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.PG.PGName</td>
+                <td>@item.RoomDetails.RoomType</td>
+                <td>@item.CheckInTime</td>
+                <td>@item.CheckOutTime</td>
+                <td>@(item.VisitorsAllowed ? "Yes" : "No")</td>
+                <td>@item.GateClosingTime</td>
+                <td>@item.NoticePeriod</td>
+                <td>
+                    @Html.ActionLink("Edit", "EditRules", new { id = item.RuleID }, new { @class = "btn btn-warning btn-sm" }) |
+                    @Html.ActionLink("Delete", "DeleteRules", new { id = item.RuleID }, new { @class = "btn btn-danger btn-sm" })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,31 @@
+﻿@model System.Data.DataTable
+@{
+    ViewBag.Title = "FoodMenu List";
+}
+<h2>Food Menu</h2>
+<a href="@Url.Action("AddMenu","FoodMenu", new { pgid=ViewBag.PGID, roomid=ViewBag.RoomID })" class="btn btn-primary" style="float:right;">+ Add Menu</a>
+<br /><br />
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Day</th>
+            <th>Meal Type</th>
+            <th>Menu Items</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (System.Data.DataRow row in Model.Rows)
+        {
+            <tr>
+                <td>@row["DayOfWeek"]</td>
+                <td>@row["MealType"]</td>
+                <td>@row["MenuItems"]</td>
+                <td>
+                    <a href="@Url.Action("EditMenu","FoodMenu", new { id=row["MenuID"] })" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="@Url.Action("DeleteMenu","FoodMenu", new { id=row["MenuID"] })" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

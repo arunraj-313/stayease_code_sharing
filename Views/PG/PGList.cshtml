@@ -1,0 +1,48 @@
+﻿@model System.Data.DataTable
+@{
+    ViewBag.Title = "PG List";
+}
+<h2>PG List</h2>
+<a href="@Url.Action("AddPG","PG")" class="btn btn-primary" style="float:right;margin-bottom:10px;">+ Add PG</a>
+<br /><br />
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>PGID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>PG Type</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>State</th>
+            <th>PinCode</th>
+            <th>Landmark</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (System.Data.DataRow row in Model.Rows)
+        {
+            <tr>
+                <td>@row["PGID"]</td>
+                <td>@row["PGName"]</td>
+                <td>@row["Email"]</td>
+                <td>@row["PGType"]</td>
+                <td>@row["PGCategory"]</td>
+                <td>@row["Description"]</td>
+                <td>@row["Address"]</td>
+                <td>@row["City"]</td>
+                <td>@row["State"]</td>
+                <td>@row["PinCode"]</td>
+                <td>@row["Landmark"]</td>
+                <td>
+                    <a href="@Url.Action("EditPG","PG", new { id=row["PGID"]})" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="@Url.Action("DeletePG","PG", new { id=row["PGID"]})" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

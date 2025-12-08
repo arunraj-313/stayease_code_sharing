@@ -1,0 +1,27 @@
+﻿@model StayEasePG.Models.PG
+<h2>Add PG</h2>
+@using (Html.BeginForm())
+{
+    <label>PG Name</label>
+    @Html.TextBoxFor(m => m.PGName, new { @class = "form-control" })
+    <label>Email (Must match Admin Email)</label>
+    @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+    <label>PG Type</label>
+    @Html.TextBoxFor(m => m.PGType, new { @class = "form-control" })
+    <label>Category</label>
+    @Html.TextBoxFor(m => m.PGCategory, new { @class = "form-control" })
+    <label>Description</label>
+    @Html.TextAreaFor(m => m.Description, new { @class = "form-control" })
+    <label>Address</label>
+    @Html.TextBoxFor(m => m.Address, new { @class = "form-control" })
+    <label>City</label>
+    @Html.TextBoxFor(m => m.City, new { @class = "form-control" })
+    <label>State</label>
+    @Html.TextBoxFor(m => m.State, new { @class = "form-control" })
+    <label>Pincode</label>
+    @Html.TextBoxFor(m => m.PinCode, new { @class = "form-control" })
+    <label>Landmark</label>
+    @Html.TextBoxFor(m => m.Landmark, new { @class = "form-control" })
+    <br />
+    <button class="btn btn-success">Save</button>
+}

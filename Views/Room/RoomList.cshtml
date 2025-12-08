@@ -1,0 +1,50 @@
+﻿@model System.Data.DataTable
+@{
+    ViewBag.Title = "Room List";
+}
+<h2>Room List</h2>
+<a href="@Url.Action("AddRoom","Room")" class="btn btn-primary" style="float:right;margin-bottom:10px;">+ Add Room</a>
+<br /><br />
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>RoomID</th>
+            <th>PG Name / ID</th>
+            <th>Room Type</th>
+            <th>Total Rooms</th>
+            <th>Available Rooms</th>
+            <th>Price/Day</th>
+            <th>Price/Week</th>
+            <th>Price/Month</th>
+            <th>Maintenance</th>
+            <th>Advance</th>
+            <th>Deposit</th>
+            <th>Amenities</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (System.Data.DataRow row in Model.Rows)
+        {
+            <tr>
+                <td>@row["RoomID"]</td>
+                <td>@row["PGID"]</td>
+                <td>@row["RoomType"]</td>
+                <td>@row["TotalRooms"]</td>
+                <td>@row["AvailableRooms"]</td>
+                <td>@row["PricePerDay"]</td>
+                <td>@row["PricePerWeek"]</td>
+                <td>@row["PricePerMonth"]</td>
+                <td>@(row["MaintenanceCharges"] != DBNull.Value ? row["MaintenanceCharges"] : "-")</td>
+                <td>@(row["AdvanceAmount"] != DBNull.Value ? row["AdvanceAmount"] : "-")</td>
+                <td>@(row["DepositAmount"] != DBNull.Value ? row["DepositAmount"] : "-")</td>
+                <td>@row["Amenities"]</td>
+                <td>
+                    <a href="@Url.Action("EditRoom","Room", new { id=row["RoomID"] })" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="@Url.Action("DeleteRoom","Room", new { id=row["RoomID"] })" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

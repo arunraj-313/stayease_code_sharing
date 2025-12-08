@@ -1,0 +1,74 @@
+﻿@model StayEasePG.Models.PG_Rules
+@{
+    ViewBag.Title = "Add Rules";
+}
+<h2>Add Rules</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        <hr />
+        <!-- PG Dropdown -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.PGID, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownList("PGID", ViewBag.PGID as List<SelectListItem>, "Select PG", new { @class = "form-control" })
+            </div>
+        </div>
+        <!-- Room Dropdown -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.RoomID, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownList("RoomID", ViewBag.RoomID as List<SelectListItem>, "Select Room", new { @class = "form-control" })
+            </div>
+        </div>
+        <!-- Check-In Time -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.CheckInTime, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.CheckInTime, new { @class = "form-control" })
+            </div>
+        </div>
+        <!-- Check-Out Time -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.CheckOutTime, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.CheckOutTime, new { @class = "form-control" })
+            </div>
+        </div>
+        <!-- Restrictions -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.Restrictions, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextAreaFor(model => model.Restrictions, new { @class = "form-control", rows = 3 })
+            </div>
+        </div>
+        <!-- Visitors Allowed -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.VisitorsAllowed, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.CheckBoxFor(model => model.VisitorsAllowed)
+            </div>
+        </div>
+        <!-- Gate Closing Time -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.GateClosingTime, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.GateClosingTime, new { @class = "form-control" })
+            </div>
+        </div>
+        <!-- Notice Period -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.NoticePeriod, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextBoxFor(model => model.NoticePeriod, new { @class = "form-control" })
+            </div>
+        </div>
+        <!-- Submit Button -->
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Add Rule" class="btn btn-primary" />
+            </div>
+        </div>
+    </div>
+}
