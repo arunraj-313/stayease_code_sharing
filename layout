@@ -19,12 +19,10 @@
             --text: #ffffff;
         }
 
-        /* NAVBAR */
         .navbar-custom {
             padding: 17px;
             background: linear-gradient(135deg, var(--royal-1), var(--royal-2));
             border-bottom: 1px solid rgba(207,162,58,0.3);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         .navbar-brand {
@@ -38,123 +36,32 @@
             font-weight: 600;
         }
 
-            .navbar-custom .navbar-nav > li > a:hover {
-                color: var(--gold-2);
-            }
-
-        /* LOGIN BUTTON */
         .login-btn {
             background: var(--gold-1);
             color: #071028;
             padding: 10px 18px;
             border-radius: 10px;
             font-weight: 700;
-            border: none;
-            transition: 0.3s;
         }
 
-            .login-btn:hover {
-                background: white;
-            }
-
-        /* LOGOUT */
-        .logout-btn {
-            background: #e04e4e;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 10px;
-            border: none;
-            font-weight: 700;
-        }
-
-            .logout-btn:hover {
-                background: #ff6b6b;
-            }
-
-        .welcome-text {
-            color: var(--gold-2);
-            font-weight: 600;
-            margin-right: 10px;
-        }
-
-        /* ========= LOGIN POPUP ========= */
         .modal-content {
             background: #0c1733;
             padding: 30px;
             border-radius: 16px;
             border: 1px solid rgba(245,210,106,0.4);
-            box-shadow: 0 0 25px rgba(0,0,0,0.6);
             color: white;
         }
 
-        .popup-title {
-            text-align: center;
-            color: #f5d26a;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-
-        .popup-label {
-            color: #f5d26a;
-            font-weight: 600;
-        }
-
-        .popup-input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: white;
-            margin-bottom: 15px;
-        }
-
-            .popup-input:focus {
-                border-color: #f5d26a;
-                box-shadow: 0 0 8px rgba(245,210,106,0.5);
-            }
-
-        .popup-btn {
-            width: 100%;
-            background: #f5d26a;
-            color: #071028;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            margin-top: 10px;
-        }
-
-            .popup-btn:hover {
-                background: #ffe8a4;
-            }
-
-        .popup-links a {
-            color: #f5d26a;
-            text-decoration: none;
-        }
-
-            .popup-links a:hover {
-                color: white;
-            }
-
-        .modal-backdrop.show {
-            opacity: 1 !important;
-            backdrop-filter: blur(8px) brightness(0.4);
-        }
-
-        footer {
-            display: none !important;
-        }
+        footer { display: none !important; }
     </style>
-
 </head>
+
 <body>
 
     <!-- NAVBAR -->
     <div class="navbar navbar-inverse navbar-fixed-top navbar-custom">
         <div class="container">
+
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
                     <span class="icon-bar"></span>
@@ -172,52 +79,55 @@
                     <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
                 </ul>
 
-                <div class="header-buttons navbar-right">
+                <div class="navbar-right">
+
                     @if (Session["FullName"] != null)
                     {
-                        <span class="welcome-text">Welcome, @Session["FullName"]!</span>
-                        <button class="logout-btn" onclick="window.location.href='@Url.Action("Logout","Account")'">Logout</button>
+                        <span style="color:#f5d26a; margin-right:10px;">Welcome, @Session["FullName"]!</span>
+                        <button class="login-btn" onclick="window.location.href='@Url.Action("Logout","Account")'">Logout</button>
                     }
                     else if (!hideLoginBtn)
                     {
-                        <!-- Show Login Popup Trigger -->
                         <button class="login-btn" data-toggle="modal" data-target="#loginModal">Login</button>
                     }
+
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div class="container body-content" style="margin-top:100px;">
         @RenderBody()
     </div>
 
-    <!-- POPUP LOGIN -->
+    <!-- LOGIN POPUP -->
     <div class="modal fade" id="loginModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
 
-                <h2 class="popup-title">Login</h2>
+                <h2 style="text-align:center; color:#f5d26a; font-weight:700;">Login</h2>
 
                 @using (Html.BeginForm("Login", "Account", FormMethod.Post))
                 {
-                    <div class="form-group">
-                        <label class="popup-label">Email or Username</label>
-                        @Html.TextBox("email", null, new { @class = "popup-input", placeholder = "Enter your email" })
-                    </div>
+                    <label style="color:#f5d26a;">Email / Username</label>
+                    @Html.TextBox("email", null, new { @class = "form-control", placeholder = "Enter your email" })
 
-                    <div class="form-group">
-                        <label class="popup-label">Password</label>
-                        @Html.Password("password", null, new { @class = "popup-input", placeholder = "Enter your password" })
-                    </div>
+                    <br />
 
-                    <button type="submit" class="popup-btn">Login</button>
+                    <label style="color:#f5d26a;">Password</label>
+                    @Html.Password("password", null, new { @class = "form-control", placeholder = "Enter your password" })
 
-                    <div class="popup-links text-center mt-3">
-                        <a href="/Account/ForgotPassword">Forgot Password?</a><br />
-                        <a href="/Account/Register">New User? Register Here</a>
+                    <br />
+
+                    <button class="login-btn" style="width:100%;">Login</button>
+
+                    <div style="text-align:center; margin-top:10px;">
+                        <a href="/Account/ForgotPassword" style="color:#f5d26a;">Forgot Password?</a><br />
+                        <a href="/Account/Register" style="color:#f5d26a;">New User? Register Here</a>
                     </div>
                 }
+
             </div>
         </div>
     </div>
@@ -225,122 +135,5 @@
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
 
-</body>
-</html>            color: white;
-            margin-bottom: 15px;
-        }
-
-            .popup-input:focus {
-                border-color: #f5d26a;
-                box-shadow: 0 0 8px rgba(245,210,106,0.5);
-            }
-
-        .popup-btn {
-            width: 100%;
-            background: #f5d26a;
-            color: #071028;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            margin-top: 10px;
-        }
-
-            .popup-btn:hover {
-                background: #ffe8a4;
-            }
-
-        .popup-links a {
-            color: #f5d26a;
-            text-decoration: none;
-        }
-
-            .popup-links a:hover {
-                color: white;
-            }
-
-        /* Blur background */
-        .modal-backdrop.show {
-            opacity: 1 !important;
-            backdrop-filter: blur(8px) brightness(0.4);
-        }
-
-        /* Hide footer completely */
-        footer {
-            display: none !important;
-        }
-    </style>
-</head>
-<body>
-    <!-- NAVBAR -->
-    <div class="navbar navbar-inverse navbar-fixed-top navbar-custom">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                @Html.ActionLink("Stay-Ease", "Index", "Home", null, new { @class = "navbar-brand" })
-            </div>
-            <div class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("About", "About", "Home")</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
-                </ul>
-                <div class="header-buttons navbar-right">
-                    @if (Session["FullName"] != null)
-                    {
-                        <span class="welcome-text">Welcome, @Session["FullName"]!</span>
-                        <button class="logout-btn" onclick="window.location.href='@Url.Action("Logout","Account")'">Logout</button>
-                    }
-                    else if (current != "login")
-                    {
-                        <!-- Open Popup -->
-                        <button class="login-btn" data-toggle="modal" data-target="#loginModal">Login</button>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="container body-content" style="margin-top:100px;">
-        @RenderBody()
-    </div>
-    <!-- ================= POPUP LOGIN ================= -->
-    <div class="modal fade" id="loginModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <h2 class="popup-title">Login</h2>
-                @using (Html.BeginForm("Login", "Account", FormMethod.Post))
-                {
-                    <div class="form-group">
-                        <label class="popup-label">Email or Username</label>
-                        @Html.TextBox("email", null, new {
-                            @class = "popup-input",
-                            placeholder = "Enter your email"
-                        })
-                    </div>
-
-                    <div class="form-group" style="margin-top:15px;">
-                        <label class="popup-label">Password</label>
-                        @Html.Password("password", null, new {
-                            @class = "popup-input",
-                            placeholder = "Enter your password"
-                        })
-                    </div>
-
-                    <button type="submit" class="popup-btn">Login</button>
-
-                    <div class="popup-links text-center mt-3">
-                        <a href="/Account/ForgotPassword">Forgot Password?</a><br />
-                        <a href="/Account/Register">New User? Register Here</a>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
 </body>
 </html>
