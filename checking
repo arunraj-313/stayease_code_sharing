@@ -1,3 +1,125 @@
+inside Forgot Password ihave this code.
+@{
+ 
+    ViewBag.Title = "Forgot Password";
+}
+<h2 class="text-center mt-3">Forgot Password</h2>
+ 
+<div class="container mt-4">
+<div class="row justify-content-center">
+<div class="col-md-5">
+            @if (TempData["error"] != null)
+ 
+            {
+ 
+                <div class="alert alert-danger">@TempData["error"]</div>
+ 
+            }
+            @if (TempData["success"] != null)
+ 
+            {
+ 
+                <div class="alert alert-success">@TempData["success"]</div>
+ 
+            }
+ 
+            <form method="post" action="/Account/SendOTP">
+<div class="mb-3">
+<label>Email</label>
+<input type="email" name="Email" class="form-control" required />
+</div>
+ 
+                <button class="btn btn-primary w-100 mt-3">Send OTP</button>
+</form>
+</div>
+</div>
+</div>
+ 
+ 
+inside ResetPassword file i have this code.
+@{
+        ViewBag.Title = "Forgot Password";
+        Layout = "~/Views/Shared/_Layout.cshtml";   // remove if not using layout
+    }
+<h2 class="text-center mt-3">Reset Your Password</h2>
+<div class="container mt-4">
+<div class="row justify-content-center">
+<div class="col-md-5">
+                @if (TempData["success"] != null)
+                {
+<div class="alert alert-success">@TempData["success"]</div>
+                }
+                @if (TempData["error"] != null)
+                {
+<div class="alert alert-danger">@TempData["error"]</div>
+                }
+<form method="post" action="/Account/ForgotPassword">
+<!-- Email -->
+<div class="mb-3">
+<label class="form-label">Email</label>
+<input type="email" name="Email" class="form-control" required />
+</div>
+<!-- New Password -->
+<div class="mb-3">
+<label class="form-label">New Password</label>
+<input type="password" name="NewPassword" class="form-control" required />
+</div>
+<!-- Confirm Password -->
+<div class="mb-3">
+<label class="form-label">Confirm New Password</label>
+<input type="password" name="ConfirmPassword" class="form-control" required />
+</div>
+<button class="btn btn-primary w-100 mt-3">Reset Password</button>
+<div class="text-center mt-3">
+<a href="/Account/Login">Back to Login</a>
+</div>
+</form>
+</div>
+</div>
+</div>
+ 
+inside Verify OTP i have this code.
+ 
+@{
+ 
+    ViewBag.Title = "Verify OTP";
+}
+<h2 class="text-center mt-3">Verify OTP</h2>
+ 
+<div class="container mt-4">
+<div class="row justify-content-center">
+<div class="col-md-5">
+            @if (TempData["error"] != null)
+ 
+            {
+ 
+                <div class="alert alert-danger">@TempData["error"]</div>
+ 
+            }
+ 
+            <form method="post" action="/Account/VerifyOTP">
+<input type="hidden" name="Email" value="@ViewBag.Email" />
+ 
+                <div class="mb-3">
+<label>Enter OTP</label>
+<input type="text" name="OTP" class="form-control" required />
+</div>
+ 
+                <button class="btn btn-success w-100 mt-3">Verify OTP</button>
+</form>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
 using StayEasePG.Models;
 using System;
 using System.Collections.Generic;
