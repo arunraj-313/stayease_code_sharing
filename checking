@@ -1,3 +1,142 @@
+using System.Net.Mail;
+using System.Net;
+
+public class AccountController : Controller
+{
+    string connString = ConfigurationManager.ConnectionStrings["EasyPG"].ConnectionString;
+
+    // ===================== FORGOT PASSWORD ======================
+    [HttpGet]
+    public ActionResult ForgotPassword()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public ActionResult SendOTP(string Email)
+    {
+        string otp = new Random().Next(100000, 999999).ToString();
+
+        // STEP 1: CHECK EMAIL EXISTS
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Mode", "CheckEmail");
+            cmd.Parameters.AddWithValue("@Email", Email);
+
+            con.Open();
+            int count = Convert.ToInt32(cmd.ExecuteScalar());
+            if (count == 0)
+            {
+                TempData["error"] = "Email not found!";
+                return View("ForgotPassword");
+            }
+        }
+
+        // STEP 2: SAVE OTP
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Mode", "InsertOTP");
+            cmd.Parameters.AddWithValue("@Email", Email);
+            cmd.Parameters.AddWithValue("@OTP", otp);
+
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        // STEP 3: SEND OTP EMAIL
+        SendOTPEmail(Email, otp);
+
+        TempData["success"] = $"OTP Sent to {Email}";
+        ViewBag.Email = Email;
+        return View("VerifyOTP");
+    }
+
+    [HttpPost]
+    public ActionResult VerifyOTP(string Email, string OTP)
+    {
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Mode", "VerifyOTP");
+            cmd.Parameters.AddWithValue("@Email", Email);
+            cmd.Parameters.AddWithValue("@OTP", OTP);
+
+            con.Open();
+            int valid = Convert.ToInt32(cmd.ExecuteScalar());
+
+            if (valid == 1)
+            {
+                TempData["success"] = "OTP Verified!";
+                ViewBag.Email = Email;
+                return View("ResetPassword");
+            }
+            else
+            {
+                TempData["error"] = "Invalid OTP!";
+                ViewBag.Email = Email;
+                return View("VerifyOTP");
+            }
+        }
+    }
+
+    [HttpPost]
+    public ActionResult ResetPassword(string Email, string NewPassword, string ConfirmPassword)
+    {
+        if (NewPassword != ConfirmPassword)
+        {
+            TempData["error"] = "Password mismatch!";
+            ViewBag.Email = Email;
+            return View();
+        }
+
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Mode", "UpdatePassword");
+            cmd.Parameters.AddWithValue("@Email", Email);
+            cmd.Parameters.AddWithValue("@NewPassword", NewPassword);
+
+            con.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        TempData["success"] = "Password Updated Successfully!";
+        return RedirectToAction("Login");
+    }
+
+    // ===================== EMAIL FUNCTION ======================
+    private void SendOTPEmail(string Email, string OTP)
+    {
+        try
+        {
+            MailMessage mail = new MailMessage();
+            mail.To.Add(Email);
+            mail.From = new MailAddress("your-email@gmail.com"); // Replace with your email
+            mail.Subject = "Password Reset OTP";
+            mail.Body = "Your OTP is: " + OTP;
+            mail.IsBodyHtml = false;
+
+            SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+            smtp.Credentials = new NetworkCredential("your-email@gmail.com", "your-app-password"); // Use Gmail App Password
+            smtp.EnableSsl = true;
+            smtp.Send(mail);
+        }
+        catch (Exception ex)
+        {
+            TempData["error"] = "Error sending email: " + ex.Message;
+        }
+    }
+}
+
+
+
+
 
 [HttpPost]
 public ActionResult SendOTP(string Email)
