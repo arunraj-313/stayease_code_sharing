@@ -1,4 +1,57 @@
 @{
+    ViewBag.Title = "Forgot Password";
+}
+
+<h2 class="text-center mt-3">Forgot Password</h2>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+
+            @if (TempData["error"] != null)
+            {
+                <div class="alert alert-danger">@TempData["error"]</div>
+            }
+
+            @if (TempData["success"] != null)
+            {
+                <div class="alert alert-success">@TempData["success"]</div>
+            }
+
+            <!-- If OTP is NOT sent yet => Show Email -->
+            @if (ViewBag.ShowOTP == null)
+            {
+                <form method="post" action="/Account/SendOTP">
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" name="Email" class="form-control" required />
+                    </div>
+
+                    <button class="btn btn-primary w-100 mt-3">Send OTP</button>
+                </form>
+            }
+
+            <!-- If OTP is sent => Show OTP Box -->
+            @if (ViewBag.ShowOTP == true)
+            {
+                <form method="post" action="/Account/VerifyOTP">
+                    <input type="hidden" name="Email" value="@ViewBag.Email" />
+
+                    <div class="mb-3">
+                        <label>Enter OTP</label>
+                        <input type="text" name="OTP" class="form-control" required />
+                    </div>
+
+                    <button class="btn btn-success w-100 mt-3">Verify OTP</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+@{
     ViewBag.Title = "Reset Password";
 }
 
