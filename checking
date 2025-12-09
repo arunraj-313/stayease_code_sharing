@@ -1,3 +1,89 @@
+
+[HttpPost]
+public ActionResult SendOTP(string Email)
+{
+    string otp = new Random().Next(100000, 999999).ToString();
+
+    // Check email exists
+    using (SqlConnection con = new SqlConnection(connString))
+    {
+        SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@Mode", "CheckEmail");
+        cmd.Parameters.AddWithValue("@Email", Email);
+
+        con.Open();
+        int count = Convert.ToInt32(cmd.ExecuteScalar());
+
+        if (count == 0)
+        {
+            TempData["error"] = "Email not found!";
+            return View("ForgotPassword");
+        }
+    }
+
+    // Insert OTP
+    using (SqlConnection con = new SqlConnection(connString))
+    {
+        SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+        cmd.CommandType = CommandType.StoredProcedure;
+        cmd.Parameters.AddWithValue("@Mode", "InsertOTP");
+        cmd.Parameters.AddWithValue("@Email", Email);
+        cmd.Parameters.AddWithValue("@OTP", otp);
+
+        con.Open();
+        cmd.ExecuteNonQuery();
+    }
+
+    TempData["success"] = $"OTP Sent! (Debug OTP: {otp})";
+
+    // Show OTP input on same page
+    ViewBag.Email = Email;
+    ViewBag.ShowOTP = true;
+
+    return View("ForgotPassword");
+}
+
+
+
+[HttpPost]
+public ActionResult VerifyOTP(string Email, string OTP)
+{
+    using (SqlConnection con = new SqlConnection(connString))
+    {
+        SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+        cmd.CommandType = CommandType.StoredProcedure;
+
+        cmd.Parameters.AddWithValue("@Mode", "VerifyOTP");
+        cmd.Parameters.AddWithValue("@Email", Email);
+        cmd.Parameters.AddWithValue("@OTP", OTP);
+
+        con.Open();
+        int valid = Convert.ToInt32(cmd.ExecuteScalar());
+
+        if (valid == 1)
+        {
+            TempData["success"] = "OTP Verified!";
+            return RedirectToAction("ResetPassword", new { email = Email });
+        }
+        else
+        {
+            TempData["error"] = "Invalid OTP!";
+            ViewBag.Email = Email;
+            ViewBag.ShowOTP = true;
+            return View("ForgotPassword");
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 @{
     ViewBag.Title = "Forgot Password";
 }
