@@ -1,3 +1,50 @@
+CREATE PROCEDURE SP_ForgotPassword
+    @Mode VARCHAR(20),
+    @Email VARCHAR(200) = NULL,
+    @OTP VARCHAR(10) = NULL,
+    @NewPassword VARCHAR(200) = NULL
+AS
+BEGIN
+    IF @Mode = 'CheckEmail'
+    BEGIN
+        SELECT COUNT(*) FROM Users WHERE Email = @Email;
+        RETURN;
+    END
+
+    IF @Mode = 'InsertOTP'
+    BEGIN
+        DELETE FROM OTPTable WHERE Email = @Email;
+
+        INSERT INTO OTPTable (Email, OTP, Expiry)
+        VALUES (@Email, @OTP, DATEADD(MINUTE, 10, GETDATE()));
+    END
+
+    IF @Mode = 'VerifyOTP'
+    BEGIN
+        SELECT COUNT(*)
+        FROM OTPTable
+        WHERE Email = @Email
+        AND OTP = @OTP
+        AND Expiry > GETDATE();
+    END
+
+    IF @Mode = 'UpdatePassword'
+    BEGIN
+        UPDATE Users
+        SET PasswordHash = @NewPassword
+        WHERE Email = @Email;
+
+        DELETE FROM OTPTable WHERE Email = @Email;
+    END
+END
+
+
+
+
+
+
+
+
 using System.Net.Mail;
 using System.Net;
 
