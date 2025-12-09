@@ -1,65 +1,90 @@
 [HttpPost]
-        public ActionResult Register(UserModel user, string Role)
+public ActionResult Register(UserModel user, string Role)
+{
+    if (!ModelState.IsValid)
+    {
+        TempData["error"] = "Please fill all required fields correctly!";
+        return View(user);
+    }
+
+    if (user.Password != user.ConfirmPassword)
+    {
+        TempData["error"] = "Passwords do not match!";
+        return View(user);
+    }
+
+    try
+    {
+        using (SqlConnection con = new SqlConnection(connString))
         {
-            if (!ModelState.IsValid)
+            con.Open();
+
+            // ================= CHECK EMAIL EXISTS ====================
+            string checkQuery = @"
+                SELECT COUNT(*) FROM Users WHERE Email = @Email
+                UNION ALL
+                SELECT COUNT(*) FROM Admins WHERE Email = @Email";
+
+            SqlCommand checkCmd = new SqlCommand(checkQuery, con);
+            checkCmd.Parameters.AddWithValue("@Email", user.Email);
+
+            int existsUser = 0, existsAdmin = 0;
+
+            using (SqlDataReader dr = checkCmd.ExecuteReader())
             {
-                TempData["error"] = "Please fill all required fields correctly!";
+                if (dr.Read()) existsUser = dr.GetInt32(0);  // Users table
+                if (dr.Read()) existsAdmin = dr.GetInt32(0); // Admins table
+            }
+
+            if (existsUser > 0 || existsAdmin > 0)
+            {
+                TempData["error"] = "Email already exists! Please use a different email.";
                 return View(user);
             }
 
-            if (user.Password != user.ConfirmPassword)
-            {
-                TempData["error"] = "Passwords do not match!";
-                return View(user);
-            }
+            // ===================== INSERT RECORD =====================
+            string query = "";
 
-            try
+            if (Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
             {
-                using (SqlConnection con = new SqlConnection(connString))
-                {
-                    string query = "";
-
-                    if (Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
-                    {
-                        query = @"INSERT INTO Admins (FullName, Email, PhoneNo, PasswordHash, Role)
+                query = @"INSERT INTO Admins (FullName, Email, PhoneNo, PasswordHash, Role)
                           VALUES (@FullName, @Email, @PhoneNo, @PasswordHash, @Role)";
-                    }
-                    else
-                    {
-                        query = @"INSERT INTO Users (FullName, Email, Gender, PhoneNo, Address, IDProofType, IDProofNumber, Occupation, PasswordHash, Role)
-                          VALUES (@FullName, @Email, @Gender, @PhoneNo, @Address, @IDProofType, @IDProofNumber, @Occupation, @PasswordHash, @Role)";
-                    }
-                    SqlCommand cmd = new SqlCommand(query, con);
-                    cmd.Parameters.AddWithValue("@FullName", user.FullName);
-                    cmd.Parameters.AddWithValue("@Email", user.Email);
-                    cmd.Parameters.AddWithValue("@PhoneNo", user.PhoneNo);
-                    cmd.Parameters.AddWithValue("@PasswordHash", user.Password);
-                    cmd.Parameters.AddWithValue("@Role", Role);
-
-                    // Add extra fields for Users only
-                    if (Role == "User")
-                    {
-                        cmd.Parameters.AddWithValue("@Gender", (object)user.Gender ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Address", user.Address ?? "");
-                        cmd.Parameters.AddWithValue("@IDProofType", user.IDProofType ?? "");
-                        cmd.Parameters.AddWithValue("@IDProofNumber", user.IDProofNumber ?? "");
-                        cmd.Parameters.AddWithValue("@Occupation", user.Occupation ?? "");
-                    }
-                    con.Open();
-                    cmd.ExecuteNonQuery();
-                }
-
-                TempData["success"] = "Registered Successfully!";
-                return RedirectToAction("Login");
             }
-            catch (Exception ex)
+            else
             {
-                TempData["error"] = "Registration failed: " + ex.Message;
-                return View(user);
+                query = @"INSERT INTO Users 
+                        (FullName, Email, Gender, PhoneNo, Address, IDProofType, IDProofNumber, Occupation, PasswordHash, Role)
+                          VALUES (@FullName, @Email, @Gender, @PhoneNo, @Address, @IDProofType, @IDProofNumber, @Occupation, @PasswordHash, @Role)";
             }
+
+            SqlCommand cmd = new SqlCommand(query, con);
+            cmd.Parameters.AddWithValue("@FullName", user.FullName);
+            cmd.Parameters.AddWithValue("@Email", user.Email);
+            cmd.Parameters.AddWithValue("@PhoneNo", user.PhoneNo);
+            cmd.Parameters.AddWithValue("@PasswordHash", user.Password);
+            cmd.Parameters.AddWithValue("@Role", Role);
+
+            if (Role == "User")
+            {
+                cmd.Parameters.AddWithValue("@Gender", (object)user.Gender ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Address", user.Address ?? "");
+                cmd.Parameters.AddWithValue("@IDProofType", user.IDProofType ?? "");
+                cmd.Parameters.AddWithValue("@IDProofNumber", user.IDProofNumber ?? "");
+                cmd.Parameters.AddWithValue("@Occupation", user.Occupation ?? "");
+            }
+
+            cmd.ExecuteNonQuery();
         }
 
-
+        TempData["success"] = "Registered Successfully!";
+        return RedirectToAction("Login");
+    }
+    catch (Exception ex)
+    {
+        TempData["error"] = "Registration failed: " + ex.Message;
+        return View(user);
+    }
+}
 
 
 
