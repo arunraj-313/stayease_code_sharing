@@ -1,3 +1,31 @@
+private void SendWelcomeEmail(string Email, string FullName)
+{
+    try
+    {
+        MailMessage mail = new MailMessage();
+        mail.To.Add(Email);
+        mail.From = new MailAddress("stayeaseofficial@gmail.com"); // your gmail
+        mail.Subject = "Welcome to StayEase!";
+        mail.Body = $"Hello {FullName},\n\nWelcome to StayEase! 🎉\nYou registered successfully.\n\nFind your best PG today!\n\nThank you,\nStayEase Team";
+        mail.IsBodyHtml = false;
+
+        SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+        smtp.Credentials = new NetworkCredential("stayeaseofficial@gmail.com", "fstz tzcr yxbj bkbx"); // your Gmail App Password
+        smtp.EnableSsl = true;
+
+        smtp.Send(mail);
+    }
+    catch (Exception ex)
+    {
+        TempData["error"] = "Welcome email failed: " + ex.Message;
+    }
+}
+
+
+
+
+
+
 @{ 
     string current = ViewContext.RouteData.Values["Action"].ToString().ToLower();
     string userRole = Session["Role"] as string;
