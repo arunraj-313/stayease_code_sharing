@@ -1,0 +1,546 @@
+i have this two cs.html code okay 
+VerifyForgotPasswordOTP.cshtml
+@{
+
+    ViewBag.Title = "Verify OTP";
+
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+}
+
+<div class="container mt-5" style="max-width:500px;">
+    <h3 class="text-center text-warning">Verify OTP</h3>
+
+    @if (TempData["error"] != null)
+
+    {
+
+        <div class="alert alert-danger">@TempData["error"]</div>
+
+    }
+
+    @if (TempData["success"] != null)
+
+    {
+
+        <div class="alert alert-success">@TempData["success"]</div>
+
+    }
+
+    <form method="post" action="/Account/VerifyForgotPasswordOTP">
+        <input type="hidden" name="Email" value="@ViewBag.Email" />
+
+        <div class="mb-3">
+            <label>Enter OTP</label>
+            <input type="text" name="OTP" class="form-control" required />
+        </div>
+
+        <button type="submit" class="btn btn-warning w-100">Verify OTP</button>
+    </form>
+</div>
+
+
+VerifyRegisterOTP.cshtml
+@{
+    ViewBag.Title = "Verify OTP";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="text-center mt-3">Verify OTP</h2>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+
+            @if (TempData["error"] != null)
+            {
+                <div class="alert alert-danger">@TempData["error"]</div>
+            }
+
+            <form method="post" action="/Account/VerifyRegisterOTP">
+
+                <input type="hidden" name="Email" value="@ViewBag.Email" />
+
+                <div class="mb-3">
+                    <label>Enter OTP</label>
+                    <input type="text" name="OTP" class="form-control" required />
+                </div>
+
+                <button class="btn btn-success w-100 mt-3">Verify OTP</button>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+using StayEasePG.Models;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web;
+using System.Net.Mail;
+using System.Web.Mvc;
+using System.Net;
+
+namespace StayEasePG.Controllers
+{
+    public class AccountController : Controller
+    {
+        // DB Connection
+        string connString = ConfigurationManager.ConnectionStrings["StayEasePGConn"].ConnectionString;
+
+
+
+        // ===================== REGISTER ======================
+        [HttpGet]
+        public ActionResult Register()
+        {
+            return View(new UserModel());
+        }
+
+
+        [HttpPost]
+        public ActionResult Register(UserModel user)
+        {
+            try
+            {
+                // 1. Check email exist or not
+                using (SqlConnection con = new SqlConnection(connString))
+                {
+                    con.Open();
+                    SqlCommand checkCmd = new SqlCommand("SELECT COUNT(*) FROM Users WHERE Email=@Email", con);
+                    checkCmd.Parameters.AddWithValue("@Email", user.Email);
+
+                    int count = (int)checkCmd.ExecuteScalar();
+                    if (count > 0)
+                    {
+                        TempData["error"] = "Email already exists!";
+                        return View(user);
+                    }
+                }
+
+                // 2. Generate OTP
+                Random rnd = new Random();
+                int otp = rnd.Next(100000, 999999);
+
+                // 3. Save User Details temporarily in Session
+                Session["Reg_FullName"] = user.FullName;
+                Session["Reg_Email"] = user.Email;
+                Session["Reg_Password"] = user.Password;
+                Session["Reg_Gender"] = user.Gender;
+                Session["Reg_PhoneNo"] = user.PhoneNo;
+                Session["Reg_Address"] = user.Address;
+                Session["Reg_IDProofType"] = user.IDProofType;
+                Session["Reg_IDProofNumber"] = user.IDProofNumber;
+                Session["Reg_Occupation"] = user.Occupation;
+                Session["Reg_Role"] = user.Role;
+                Session["Reg_OTP"] = otp;
+
+                // 4. Send OTP Mail
+                bool mailStatus = SendOTPEmail(user.Email, otp);
+                if (!mailStatus)
+                {
+                    TempData["error"] = "Failed to send OTP. Try again.";
+                    return View(user);
+                }
+
+                // 5. Redirect to OTP screen
+                return RedirectToAction("VerifyOTP");
+            }
+            catch
+            {
+                TempData["error"] = "Something went wrong!";
+                return View(user);
+            }
+        }
+
+
+        public bool SendOTPEmail(string email, int otp)
+        {
+            try
+            {
+                MailMessage mail = new MailMessage();
+                mail.To.Add(email);
+                mail.From = new MailAddress("stayeasepgbooking@gmail.com");
+                mail.Subject = "StayEase Registration OTP";
+                mail.Body = $"Your OTP for StayEase registration is: {otp}";
+
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+                smtp.EnableSsl = true;
+                smtp.Credentials = new NetworkCredential("stayeasepgbooking@gmail.com", "fstz tzcr yxbj bkbx");
+                smtp.Send(mail);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+
+        [HttpGet]
+        public ActionResult VerifyOTP()
+        {
+            return View();
+        }
+
+
+        [HttpPost]
+        public ActionResult VerifyOTP(string otp)
+        {
+            int sessionOTP = Convert.ToInt32(Session["Reg_OTP"]);
+
+            if (otp != sessionOTP.ToString())
+            {
+                TempData["error"] = "Invalid OTP!";
+                return View();
+            }
+
+            // OTP Correct → Save User
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+
+                SqlCommand cmd = new SqlCommand(@"
+            INSERT INTO Users
+(FullName, Email, PasswordHash, Gender, PhoneNo, Address, IDProofType, IDProofNumber, Occupation, Role)
+VALUES
+(@FullName, @Email, @Password, @Gender, @PhoneNo, @Address, @IDProofType, @IDProofNumber, @Occupation, @Role)", con);
+
+                cmd.Parameters.AddWithValue("@FullName", Session["Reg_FullName"]);
+                cmd.Parameters.AddWithValue("@Email", Session["Reg_Email"]);
+                cmd.Parameters.AddWithValue("@Password", Session["Reg_Password"]);
+                cmd.Parameters.AddWithValue("@Gender", Session["Reg_Gender"]);
+                cmd.Parameters.AddWithValue("@PhoneNo", Session["Reg_PhoneNo"]);
+                cmd.Parameters.AddWithValue("@Address", Session["Reg_Address"]);
+                cmd.Parameters.AddWithValue("@IDProofType", Session["Reg_IDProofType"]);
+                cmd.Parameters.AddWithValue("@IDProofNumber", Session["Reg_IDProofNumber"]);
+                cmd.Parameters.AddWithValue("@Occupation", Session["Reg_Occupation"]);
+                cmd.Parameters.AddWithValue("@Role", Session["Reg_Role"]);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            // Clear session after success
+            Session.Clear();
+
+            // Open login popup directly
+            return Redirect("/Home/Index?openLogin=true");
+        }
+
+
+        public ActionResult CompleteRegister(string Email)
+        {
+            var user = TempData["UserData"] as UserModel;
+            string Role = TempData["Role"].ToString();
+
+            if (user == null)
+            {
+                TempData["error"] = "Session expired. Please register again.";
+                return RedirectToAction("Register");
+            }
+
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+
+                string query = "";
+
+                if (Role == "Admin")
+                {
+                    query = @"INSERT INTO Admins (FullName, Email, PhoneNo, PasswordHash, Role)
+                      VALUES (@FullName, @Email, @PhoneNo, @PasswordHash, @Role)";
+                }
+                else
+                {
+                    query = @"INSERT INTO Users (FullName, Email, Gender, PhoneNo, Address, IDProofType, IDProofNumber, Occupation, PasswordHash, Role)
+                      VALUES (@FullName, @Email, @Gender, @PhoneNo, @Address, @IDProofType, @IDProofNumber, @Occupation, @PasswordHash, @Role)";
+                }
+
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@FullName", user.FullName);
+                cmd.Parameters.AddWithValue("@Email", user.Email);
+                cmd.Parameters.AddWithValue("@PhoneNo", user.PhoneNo);
+                cmd.Parameters.AddWithValue("@PasswordHash", user.Password);
+                cmd.Parameters.AddWithValue("@Role", Role);
+
+                if (Role == "User")
+                {
+                    cmd.Parameters.AddWithValue("@Gender", user.Gender ?? "");
+                    cmd.Parameters.AddWithValue("@Address", user.Address ?? "");
+                    cmd.Parameters.AddWithValue("@IDProofType", user.IDProofType ?? "");
+                    cmd.Parameters.AddWithValue("@IDProofNumber", user.IDProofNumber ?? "");
+                    cmd.Parameters.AddWithValue("@Occupation", user.Occupation ?? "");
+                }
+
+                cmd.ExecuteNonQuery();
+            }
+
+            TempData["success"] = "Account created successfully!";
+            TempData["OpenLoginPopup"] = "true";
+
+            return RedirectToAction("Index", "Home", new { openLogin = "true" });
+        }
+
+        private void SendOTPEmail(string Email, string OTP)
+        {
+            try
+            {
+                MailMessage mail = new MailMessage();
+                mail.To.Add(Email);
+                mail.From = new MailAddress("stayeasepgbooking@gmail.com");
+                mail.Subject = "StayEase Registration OTP";
+                mail.Body = $"Your OTP for StayEase registration is: {OTP}";
+                mail.IsBodyHtml = false;
+
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+                smtp.Credentials = new NetworkCredential("stayeasepgbooking@gmail.com", "fstz tzcr yxbj bkbx");
+                smtp.EnableSsl = true;
+
+                smtp.Send(mail);
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = "Email error: " + ex.Message;
+            }
+        }
+
+
+        // ===================== LOGIN ======================
+
+        [HttpGet]
+        public ActionResult Login()
+        {
+            return RedirectToAction("Index", "Home", new { openLogin = "true" });
+        }
+
+        [HttpPost]
+        public ActionResult Login(string email, string password)
+        {
+            try
+            {
+                using (SqlConnection con = new SqlConnection(connString))
+                {
+                    con.Open();
+
+                    // Check Admin
+                    string adminQuery = @"SELECT AdminID AS ID, FullName, 'Admin' AS Role 
+                                  FROM Admins 
+                                  WHERE Email=@Email AND PasswordHash=@Password";
+
+                    using (SqlCommand adminCmd = new SqlCommand(adminQuery, con))
+                    {
+                        adminCmd.Parameters.Add(new SqlParameter("@Email", SqlDbType.VarChar) { Value = email });
+                        adminCmd.Parameters.Add(new SqlParameter("@Password", SqlDbType.VarChar) { Value = password });
+
+                        using (SqlDataReader dr = adminCmd.ExecuteReader())
+                        {
+                            if (dr.Read())
+                            {
+                                Session["UserID"] = dr["ID"].ToString();
+                                Session["AdminID"] = dr["ID"].ToString();
+                                Session["FullName"] = dr["FullName"].ToString();
+                                Session["Role"] = dr["Role"].ToString();
+
+                                TempData["success"] = "Admin Login Successful!";
+                                return RedirectToAction("Dashboard", "Admin");
+                            }
+                        }
+                    }
+
+                    // Check User
+                    string userQuery = @"SELECT UserID AS ID, FullName, 'User' AS Role 
+                                 FROM Users 
+                                 WHERE Email=@Email AND PasswordHash=@Password";
+
+                    using (SqlCommand userCmd = new SqlCommand(userQuery, con))
+                    {
+                        userCmd.Parameters.Add(new SqlParameter("@Email", SqlDbType.VarChar) { Value = email });
+                        userCmd.Parameters.Add(new SqlParameter("@Password", SqlDbType.VarChar) { Value = password });
+
+                        using (SqlDataReader dr = userCmd.ExecuteReader())
+                        {
+                            if (dr.Read())
+                            {
+                                Session["UserID"] = dr["ID"].ToString();
+                                Session["FullName"] = dr["FullName"].ToString();
+                                Session["Role"] = dr["Role"].ToString();
+
+                                TempData["success"] = "Login Successful!";
+                                return RedirectToAction("Index", "Home");
+                            }
+                        }
+                    }
+
+                    TempData["error"] = "Invalid Email or Password!";
+                    return View();
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = "Login error: " + ex.Message;
+                return View();
+            }
+        }
+
+
+        // ===================== LOGOUT ======================
+        public ActionResult Logout()
+        {
+            Session.Clear();
+            Session.Abandon();
+            TempData["success"] = "Logged out successfully!";
+            return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public ActionResult VerifyRegisterOTP(string Email)
+        {
+            ViewBag.Email = Email;
+            return View();
+        }
+
+        [HttpGet]
+        public ActionResult ResetPassword(string Email)
+        {
+            ViewBag.Email = Email;
+            return View();
+        }
+
+        // ===================== ======================
+        [HttpGet]
+        public ActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult SendOTP(string Email)
+        {
+            string otp = new Random().Next(100000, 999999).ToString();
+
+            // STEP 1: CHECK EMAIL EXISTS
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Mode", "CheckEmail");
+                cmd.Parameters.AddWithValue("@Email", Email);
+
+                con.Open();
+                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                if (count == 0)
+                {
+                    TempData["error"] = "Email not found!";
+                    return View("ForgotPassword");
+                }
+            }
+
+            // STEP 2: SAVE OTP
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Mode", "InsertOTP");
+                cmd.Parameters.AddWithValue("@Email", Email);
+                cmd.Parameters.AddWithValue("@OTP", otp);
+
+                con.Open();
+                cmd.ExecuteNonQuery();
+            }
+
+            // STEP 3: SEND OTP EMAIL
+            SendOTPEmailForgotPassword(Email, otp);
+
+            TempData["success"] = $"OTP Sent to {Email}";
+            ViewBag.Email = Email;
+            return View("VerifyOTP");
+        }
+
+        [HttpPost]
+        public ActionResult VerifyForgotPasswordOTP(string Email, string OTP)
+        {
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Mode", "VerifyOTP");
+                cmd.Parameters.AddWithValue("@Email", Email);
+                cmd.Parameters.AddWithValue("@OTP", OTP);
+
+                con.Open();
+                int valid = Convert.ToInt32(cmd.ExecuteScalar());
+
+                if (valid == 1)
+                {
+                    TempData["success"] = "OTP Verified!";
+                    ViewBag.Email = Email;
+                    return View("ResetPassword");
+                }
+                else
+                {
+                    TempData["error"] = "Invalid OTP!";
+                    ViewBag.Email = Email;
+                    return View("VerifyOTP");
+                }
+            }
+        }
+
+        [HttpPost]
+        public ActionResult ResetPassword(string Email, string NewPassword, string ConfirmPassword)
+        {
+            if (NewPassword != ConfirmPassword)
+            {
+                TempData["error"] = "Password mismatch!";
+                ViewBag.Email = Email;
+                return View();
+            }
+
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                SqlCommand cmd = new SqlCommand("SP_ForgotPassword", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Mode", "UpdatePassword");
+                cmd.Parameters.AddWithValue("@Email", Email);
+                cmd.Parameters.AddWithValue("@NewPassword", NewPassword);
+
+                con.Open();
+                cmd.ExecuteNonQuery();
+            }
+
+            TempData["success"] = "Password Updated Successfully!";
+            return RedirectToAction("Login");
+        }
+
+        // ===================== EMAIL FUNCTION ======================
+        private void SendOTPEmailForgotPassword(string Email, string OTP)
+        {
+            try
+            {
+                MailMessage mail = new MailMessage();
+                mail.To.Add(Email);
+                mail.From = new MailAddress("stayeasepgbooking@gmail.com"); // Replace with your email
+                mail.Subject = "StayEase - Password Reset OTP";
+                mail.Body = "Your OTP is: " + OTP;
+                mail.IsBodyHtml = false;
+
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+                smtp.Credentials = new NetworkCredential("stayeasepgbooking@gmail.com", "fstz tzcr yxbj bkbx"); // Use Gmail App Password
+                smtp.EnableSsl = true;
+                smtp.Send(mail);
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = "Error sending email: " + ex.Message;
+            }
+        }
+    }
+}
+
