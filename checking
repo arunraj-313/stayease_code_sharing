@@ -285,43 +285,195 @@
                         <label class="form-label">Occupation</label>
                         @Html.DropDownListFor(m => m.Occupation,
                             new SelectList(new[] { "Student", "Working Professional" }),
-                            "Select Occupation",
+    @{ 
+    string current = ViewContext.RouteData.Values["Action"].ToString().ToLower();
+    string userRole = Session["Role"] as string;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title - StayEase</title>
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+    <style>
+        body { background: #071028; color: white; }
+
+        /* NAVBAR */
+        .navbar-custom {
+            padding: 15px;
+            background: #0b1c3f;
+            border-bottom: 1px solid #cfa23a40;
+        }
+
+        .navbar-brand { 
+            color: #f5d26a !important; 
+            font-weight: 800; 
+            font-size: 22px;
+        }
+
+        .navbar-nav > li > a {
+            color: #cfa23a !important;
+            font-weight: 600;
+        }
+
+        /* LOGIN BUTTON */
+        .login-btn {
+            background: #f5d26a;
+            color: black;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            border: none;
+        }
+
+        /* LOGOUT BUTTON */
+        .logout-btn {
+            background: #d9534f;
+            padding: 8px 18px;
+            border-radius: 8px;
+            color: white;
+            border: none;
+        }
+
+        /* POPUP DESIGN */
+        .modal-content {
+            background: #0c1733;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #f5d26a50;
+        }
+
+        .popup-title {
+            color: #f5d26a;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .popup-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            background: #ffffff10;
+            border: 1px solid #ffffff30;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .popup-btn {
+            width: 100%;
+            padding: 10px;
+            background: #f5d26a;
+            color: black;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+        }
+
+        footer { display: none; }
+    </style>
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <div class="navbar navbar-inverse navbar-fixed-top navbar-custom">
+        <div class="container">
+            <div class="navbar-header">
+                @Html.ActionLink("StayEase", "Index", "Home", null, new { @class = "navbar-brand" })
+            </div>
+
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+
+                    @if (userRole == "Admin")
+                    {
+                        <li>@Html.ActionLink("Admin Dashboard", "Dashboard", "Admin")</li>
+                    }
+                </ul>
+
+                <div class="navbar-right">
+                    @if (Session["FullName"] != null)
+                    {
+                        <span style="color:#f5d26a; margin-right:10px;">
+                            Welcome, @Session["FullName"]
+                        </span>
+                        <button class="logout-btn"
+                                onclick="window.location.href='@Url.Action("Logout","Account")'">
+                            Logout
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="login-btn" data-toggle="modal" data-target="#loginModal">Login</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container body-content" style="margin-top:90px;">
+        @RenderBody()
+    </div>
+
+    <!-- LOGIN POPUP -->
+    <div class="modal fade" id="loginModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <h2 class="popup-title">Login</h2>
+
+                @if (TempData["loginError"] != null)
+                {
+                    <div class="alert alert-danger text-center">
+                        @TempData["loginError"]
+                    </div>
+                }
+
+                @using (Html.BeginForm("Login", "Account", FormMethod.Post))
+                {
+                    <input type="text" name="email" class="popup-input" placeholder="Email" />
+
+                    <input type="password" name="password" class="popup-input" placeholder="Password" />
+
+                    <button type="submit" class="popup-btn">Login</button>
+
+                    <div class="text-center" style="margin-top:10px;">
+                        <a href="/Account/Register" style="color:#f5d26a;">New User? Register</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+
+    <script>
+        $(document).ready(function () {
+            var url = new URL(window.location.href);
+
+            if (url.searchParams.get("openLogin") === "true") {
+                $("#loginModal").modal("show");
+            }
+        });
+    </script>
+
+</body>
+</html>                        "Select Occupation",
                             new { @class = "form-control", required = "required" })
                     </div>
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Role</label>
-                        @Html.DropDownListFor(m => m.Role,
-                            new SelectList(new[] { "User", "Admin" }),
-                            "Select Role",
-                            new { @class = "form-control", required = "required" })
-                    </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Password</label>
-                        @Html.PasswordFor(m => m.Password, new { @class = "form-control", required = "required" })
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Confirm Password</label>
-                        @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control", required = "required" })
-                    </div>
-
-                </div>
-
-                <button type="submit" class="btn-register">Register</button>
-
-                <a href="/Account/Login" class="login-link">Already have an account? Login</a>
-
-                <script>
-                    function openLoginFromRegister() {
-                        window.location.href = '/Home/Index?openLogin=true'; 
-                    }
-                </script>
-            }
-
-        </div>
-    </div>
 
 
 
