@@ -1,1 +1,156 @@
+[HttpPost]
+public ActionResult Register(UserModel user)
+{
+    try
+    {
+        // 1. Check email exist or not
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            con.Open();
+            SqlCommand checkCmd = new SqlCommand("SELECT COUNT(*) FROM Users WHERE Email=@Email", con);
+            checkCmd.Parameters.AddWithValue("@Email", user.Email);
 
+            int count = (int)checkCmd.ExecuteScalar();
+            if (count > 0)
+            {
+                TempData["error"] = "Email already exists!";
+                return View(user);
+            }
+        }
+
+        // 2. Generate OTP
+        Random rnd = new Random();
+        int otp = rnd.Next(100000, 999999);
+
+        // 3. Save User Details temporarily in Session
+        Session["Reg_FullName"] = user.FullName;
+        Session["Reg_Email"] = user.Email;
+        Session["Reg_Password"] = user.Password;
+        Session["Reg_Gender"] = user.Gender;
+        Session["Reg_PhoneNo"] = user.PhoneNo;
+        Session["Reg_Address"] = user.Address;
+        Session["Reg_IDProofType"] = user.IDProofType;
+        Session["Reg_IDProofNumber"] = user.IDProofNumber;
+        Session["Reg_Occupation"] = user.Occupation;
+        Session["Reg_Role"] = user.Role;
+        Session["Reg_OTP"] = otp;
+
+        // 4. Send OTP Mail
+        bool mailStatus = SendOTPEmail(user.Email, otp);
+        if (!mailStatus)
+        {
+            TempData["error"] = "Failed to send OTP. Try again.";
+            return View(user);
+        }
+
+        // 5. Redirect to OTP screen
+        return RedirectToAction("VerifyOTP");
+    }
+    catch
+    {
+        TempData["error"] = "Something went wrong!";
+        return View(user);
+    }
+}
+
+
+
+public bool SendOTPEmail(string email, int otp)
+{
+    try
+    {
+        MailMessage mail = new MailMessage();
+        mail.To.Add(email);
+        mail.From = new MailAddress("yourofficemail@gmail.com");
+        mail.Subject = "StayEase Registration OTP";
+        mail.Body = $"Your OTP for StayEase registration is: {otp}";
+        
+        SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+        smtp.EnableSsl = true;
+        smtp.Credentials = new NetworkCredential("yourofficemail@gmail.com", "YOUR_APP_PASSWORD");
+        smtp.Send(mail);
+
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+
+
+[HttpGet]
+public ActionResult VerifyOTP()
+{
+    return View();
+}
+
+
+[HttpPost]
+public ActionResult VerifyOTP(string otp)
+{
+    int sessionOTP = Convert.ToInt32(Session["Reg_OTP"]);
+
+    if (otp != sessionOTP.ToString())
+    {
+        TempData["error"] = "Invalid OTP!";
+        return View();
+    }
+
+    // OTP Correct → Save User
+    using (SqlConnection con = new SqlConnection(connString))
+    {
+        con.Open();
+
+        SqlCommand cmd = new SqlCommand(@"
+            INSERT INTO Users 
+            (FullName, Email, Password, Gender, PhoneNo, Address, IDProofType, IDProofNumber, Occupation, Role)
+            VALUES (@FullName, @Email, @Password, @Gender, @PhoneNo, @Address, @IDProofType, @IDProofNumber, @Occupation, @Role)", con);
+
+        cmd.Parameters.AddWithValue("@FullName", Session["Reg_FullName"]);
+        cmd.Parameters.AddWithValue("@Email", Session["Reg_Email"]);
+        cmd.Parameters.AddWithValue("@Password", Session["Reg_Password"]);
+        cmd.Parameters.AddWithValue("@Gender", Session["Reg_Gender"]);
+        cmd.Parameters.AddWithValue("@PhoneNo", Session["Reg_PhoneNo"]);
+        cmd.Parameters.AddWithValue("@Address", Session["Reg_Address"]);
+        cmd.Parameters.AddWithValue("@IDProofType", Session["Reg_IDProofType"]);
+        cmd.Parameters.AddWithValue("@IDProofNumber", Session["Reg_IDProofNumber"]);
+        cmd.Parameters.AddWithValue("@Occupation", Session["Reg_Occupation"]);
+        cmd.Parameters.AddWithValue("@Role", Session["Reg_Role"]);
+
+        cmd.ExecuteNonQuery();
+    }
+
+    // Clear session after success
+    Session.Clear();
+
+    // Open login popup directly
+    return Redirect("/Home/Index?openLogin=true");
+}
+
+
+
+@{
+    ViewBag.Title = "Verify OTP";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-center">
+    <div class="reg-card">
+        <h3 class="reg-title">Verify OTP</h3>
+
+        @if (TempData["error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["error"]</div>
+        }
+
+        @using (Html.BeginForm("VerifyOTP", "Account", FormMethod.Post))
+        {
+            <label class="form-label">Enter OTP</label>
+            <input type="text" name="otp" class="form-control" required />
+
+            <button type="submit" class="btn-register">Verify</button>
+        }
+    </div>
+</div>
