@@ -127,3 +127,54 @@ namespace StayEasePG.Controllers
         }
     }
 }
+
+
+
+
+
+
+
+
+@model System.Data.DataTable
+@{
+    ViewBag.Title = "Super Admin Dashboard";
+}
+
+<h2 class="text-center mt-3">Pending Admin Approvals</h2>
+
+@if (TempData["success"] != null)
+{
+    <div class="alert alert-success">@TempData["success"]</div>
+}
+@if (TempData["error"] != null)
+{
+    <div class="alert alert-danger">@TempData["error"]</div>
+}
+
+<table class="table table-bordered table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone No</th>
+            <th>Request Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (System.Data.DataRow row in Model.Rows)
+        {
+            <tr>
+                <td>@row["FullName"]</td>
+                <td>@row["Email"]</td>
+                <td>@row["PhoneNo"]</td>
+                <td>@row["CreatedOn"]</td>
+                <td>
+                    <a href="/SuperAdmin/Approve/@row["RequestID"]" class="btn btn-success btn-sm">Approve</a>
+                    <a href="/SuperAdmin/Decline/@row["RequestID"]" class="btn btn-danger btn-sm">Decline</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
