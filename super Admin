@@ -118,3 +118,28 @@ namespace PG.Controllers
         }
     }
 }
+
+
+
+
+
+
+
+
+
+@{
+    ViewBag.Title = "Super Admin Login";
+}
+
+<h2>Super Admin Login</h2>
+
+<form method="post">
+    <input type="text" name="Username" placeholder="Username" class="form-control" required />
+    <input type="password" name="Password" placeholder="Password" class="form-control" required />
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+
+@if (TempData["error"] != null)
+{
+    <p style="color:red">@TempData["error"]</p>
+}
