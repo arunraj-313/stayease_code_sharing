@@ -1,0 +1,129 @@
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Configuration;
+using System.Net.Mail;
+using System.Net;
+using System.Web.Mvc;
+
+namespace StayEasePG.Controllers
+{
+    public class SuperAdminController : Controller
+    {
+        string connString = ConfigurationManager.ConnectionStrings["StayEasePGConn"].ConnectionString;
+
+        // ===================== DASHBOARD ======================
+        public ActionResult Dashboard()
+        {
+            // Check if logged in
+            if (Session["SuperAdmin"] == null)
+                return RedirectToAction("Index", "Home", new { openLogin = "true" });
+
+            DataTable dt = new DataTable();
+
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                string q = "SELECT * FROM PendingAdminRequests WHERE Status='Pending'";
+                using (SqlDataAdapter da = new SqlDataAdapter(q, con))
+                {
+                    da.Fill(dt);
+                }
+            }
+
+            return View(dt);
+        }
+
+        // ===================== APPROVE ======================
+        public ActionResult Approve(int id)
+        {
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+
+                // Read pending data
+                string get = "SELECT * FROM PendingAdminRequests WHERE RequestID=@id";
+                SqlCommand cmdGet = new SqlCommand(get, con);
+                cmdGet.Parameters.AddWithValue("@id", id);
+
+                SqlDataReader dr = cmdGet.ExecuteReader();
+                if (!dr.Read())
+                {
+                    TempData["error"] = "Request not found!";
+                    return RedirectToAction("Dashboard");
+                }
+
+                string fullName = dr["FullName"].ToString();
+                string email = dr["Email"].ToString();
+                string phone = dr["PhoneNo"].ToString();
+                string password = dr["PasswordHash"].ToString();
+                dr.Close();
+
+                // Insert into Admins table
+                string insert = @"INSERT INTO Admins (FullName, Email, PhoneNo, PasswordHash, Role)
+                                  VALUES (@F,@E,@P,@PW,'Admin')";
+
+                SqlCommand cmdInsert = new SqlCommand(insert, con);
+                cmdInsert.Parameters.AddWithValue("@F", fullName);
+                cmdInsert.Parameters.AddWithValue("@E", email.ToLower());
+                cmdInsert.Parameters.AddWithValue("@P", phone);
+                cmdInsert.Parameters.AddWithValue("@PW", password);
+                cmdInsert.ExecuteNonQuery();
+
+                // Update pending table
+                SqlCommand cmdUpdate = new SqlCommand(
+                    "UPDATE PendingAdminRequests SET Status='Approved' WHERE RequestID=@id", con);
+                cmdUpdate.Parameters.AddWithValue("@id", id);
+                cmdUpdate.ExecuteNonQuery();
+
+                // SEND EMAIL
+                SendApprovalEmail(email, fullName);
+            }
+
+            TempData["success"] = "Admin Approved Successfully!";
+            return RedirectToAction("Dashboard");
+        }
+
+        // ===================== DECLINE ======================
+        public ActionResult Decline(int id)
+        {
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+
+                SqlCommand cmd = new SqlCommand(
+                    "DELETE FROM PendingAdminRequests WHERE RequestID=@id", con);
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.ExecuteNonQuery();
+            }
+
+            TempData["success"] = "Admin Request Declined!";
+            return RedirectToAction("Dashboard");
+        }
+
+        // ===================== SEND APPROVAL EMAIL ======================
+        private void SendApprovalEmail(string email, string fullName)
+        {
+            try
+            {
+                MailMessage mail = new MailMessage();
+                mail.To.Add(email);
+                mail.From = new MailAddress("stayeasepgbooking@gmail.com");
+                mail.Subject = "StayEase Admin Approval";
+                mail.Body = $"Hello {fullName},\n\n" +
+                            "Your admin account has been approved! 🎉\n" +
+                            "You can now login to StayEase as an Admin.\n\n" +
+                            "Thank you,\nStayEase Team";
+
+                SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587);
+                smtp.EnableSsl = true;
+                smtp.Credentials = new NetworkCredential("stayeasepgbooking@gmail.com", "fstz tzcr yxbj bkbx");
+
+                smtp.Send(mail);
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+    }
+}
