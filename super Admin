@@ -128,18 +128,29 @@ namespace PG.Controllers
 
 
 @{
-    ViewBag.Title = "Super Admin Login";
+    ViewBag.Title = "Pending Admin Requests";
 }
 
-<h2>Super Admin Login</h2>
+<h2>Pending Admin Approvals</h2>
 
-<form method="post">
-    <input type="text" name="Username" placeholder="Username" class="form-control" required />
-    <input type="password" name="Password" placeholder="Password" class="form-control" required />
-    <button type="submit" class="btn btn-primary">Login</button>
-</form>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Action</th>
+    </tr>
 
-@if (TempData["error"] != null)
+@foreach (System.Data.Common.DbDataRecord row in Model)
 {
-    <p style="color:red">@TempData["error"]</p>
+    <tr>
+        <td>@row["FullName"]</td>
+        <td>@row["Email"]</td>
+        <td>@row["PhoneNo"]</td>
+        <td>
+            <a class="btn btn-success" href="/SuperAdmin/Approve/@row["RequestID"]">Approve</a>
+            <a class="btn btn-danger" href="/SuperAdmin/Decline/@row["RequestID"]">Decline</a>
+        </td>
+    </tr>
 }
+</table>
