@@ -1,0 +1,120 @@
+using System;
+using System.Data.SqlClient;
+using System.Web.Mvc;
+using System.Configuration;
+
+namespace PG.Controllers
+{
+    public class SuperAdminController : Controller
+    {
+        string connString = ConfigurationManager.ConnectionStrings["EasyPG"].ConnectionString;
+
+        // Login Page
+        public ActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult Login(string Username, string Password)
+        {
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+                SqlCommand cmd = new SqlCommand(
+                    "SELECT COUNT(*) FROM SuperAdmin WHERE Username=@U AND PasswordHash=@P", con);
+
+                cmd.Parameters.AddWithValue("@U", Username);
+                cmd.Parameters.AddWithValue("@P", Password);
+
+                int count = (int)cmd.ExecuteScalar();
+
+                if (count == 1)
+                {
+                    Session["SuperAdmin"] = Username;
+                    return RedirectToAction("Dashboard");
+                }
+                else
+                {
+                    TempData["error"] = "Invalid Login!";
+                    return View();
+                }
+            }
+        }
+
+        // Dashboard → Show pending Admin requests
+        public ActionResult Dashboard()
+        {
+            if (Session["SuperAdmin"] == null)
+                return RedirectToAction("Login");
+
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+                SqlCommand cmd = new SqlCommand(
+                    "SELECT * FROM PendingAdminRequests WHERE Status='Pending'", con);
+
+                SqlDataReader dr = cmd.ExecuteReader();
+                return View(dr);
+            }
+        }
+
+        // Approve Admin
+        public ActionResult Approve(int id)
+        {
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+
+                // 1. Get data from pending table
+                SqlCommand get = new SqlCommand(
+                    "SELECT * FROM PendingAdminRequests WHERE RequestID=@id", con);
+                get.Parameters.AddWithValue("@id", id);
+                SqlDataReader dr = get.ExecuteReader();
+
+                if (!dr.Read()) return RedirectToAction("Dashboard");
+
+                string fullName = dr["FullName"].ToString();
+                string email = dr["Email"].ToString();
+                string phone = dr["PhoneNo"].ToString();
+                string pass = dr["PasswordHash"].ToString();
+
+                dr.Close();
+
+                // 2. Insert Into Admins table
+                SqlCommand ins = new SqlCommand(@"
+                    INSERT INTO Admins (FullName, Email, PhoneNo, PasswordHash, Role)
+                    VALUES (@F,@E,@P,@PW,'Admin')", con);
+
+                ins.Parameters.AddWithValue("@F", fullName);
+                ins.Parameters.AddWithValue("@E", email);
+                ins.Parameters.AddWithValue("@P", phone);
+                ins.Parameters.AddWithValue("@PW", pass);
+                ins.ExecuteNonQuery();
+
+                // 3. Delete from pending table
+                SqlCommand del = new SqlCommand(
+                    "DELETE FROM PendingAdminRequests WHERE RequestID=@id", con);
+                del.Parameters.AddWithValue("@id", id);
+                del.ExecuteNonQuery();
+            }
+
+            return RedirectToAction("Dashboard");
+        }
+
+        // Decline
+        public ActionResult Decline(int id)
+        {
+            using (SqlConnection con = new SqlConnection(connString))
+            {
+                con.Open();
+                SqlCommand del = new SqlCommand(
+                    "DELETE FROM PendingAdminRequests WHERE RequestID=@id", con);
+                del.Parameters.AddWithValue("@id", id);
+                del.ExecuteNonQuery();
+            }
+
+            return RedirectToAction("Dashboard");
+        }
+    }
+}
