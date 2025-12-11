@@ -178,3 +178,190 @@ namespace StayEasePG.Controllers
         }
     </tbody>
 </table>
+
+
+
+
+
+
+
+
+
+
+
+
+public ActionResult CompleteRegister(string Email)
+{
+    var user = TempData["UserData"] as UserModel;
+    var role = (TempData["Role"] as string ?? "").Trim();
+
+    if (user == null || string.IsNullOrWhiteSpace(role))
+    {
+        TempData["error"] = "Session expired. Please register again.";
+        return RedirectToAction("Register");
+    }
+
+    string email = user.Email.Trim().ToLower();
+    bool isAdmin = role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+    try
+    {
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            con.Open();
+
+            if (isAdmin)
+            {
+                // Insert INTO PendingAdminRequests
+                string q = @"INSERT INTO PendingAdminRequests
+                            (FullName, Email, PhoneNo, PasswordHash)
+                             VALUES (@F,@E,@P,@PW)";
+
+                using (SqlCommand cmd = new SqlCommand(q, con))
+                {
+                    cmd.Parameters.AddWithValue("@F", user.FullName ?? "");
+                    cmd.Parameters.AddWithValue("@E", email);
+                    cmd.Parameters.AddWithValue("@P", user.PhoneNo ?? "");
+                    cmd.Parameters.AddWithValue("@PW", user.Password ?? "");
+                    cmd.ExecuteNonQuery();
+                }
+
+                TempData["success"] = "Admin request submitted! Wait for approval.";
+            }
+            else
+            {
+                // Insert INTO Users
+                string q = @"INSERT INTO Users
+                (FullName, Email, Gender, PhoneNo, Address, IDProofType, IDProofNumber, 
+                 Occupation, PasswordHash, Role)
+                VALUES (@FullName,@Email,@Gender,@PhoneNo,@Address,@IDProofType,
+                @IDProofNumber,@Occupation,@PasswordHash,@Role)";
+
+                using (SqlCommand cmd = new SqlCommand(q, con))
+                {
+                    cmd.Parameters.AddWithValue("@FullName", user.FullName);
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    cmd.Parameters.AddWithValue("@Gender", user.Gender);
+                    cmd.Parameters.AddWithValue("@PhoneNo", user.PhoneNo);
+                    cmd.Parameters.AddWithValue("@Address", user.Address);
+                    cmd.Parameters.AddWithValue("@IDProofType", user.IDProofType);
+                    cmd.Parameters.AddWithValue("@IDProofNumber", user.IDProofNumber);
+                    cmd.Parameters.AddWithValue("@Occupation", user.Occupation);
+                    cmd.Parameters.AddWithValue("@PasswordHash", user.Password);
+                    cmd.Parameters.AddWithValue("@Role", role);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 🚫 REMOVE welcome email here
+            }
+        }
+
+        Session.Clear();
+
+        return RedirectToAction("Index", "Home", new { openLogin = "true" });
+    }
+    catch
+    {
+        TempData["error"] = "Something went wrong.";
+        return RedirectToAction("Register");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+[HttpPost]
+public ActionResult Login(string email, string password)
+{
+    try
+    {
+        using (SqlConnection con = new SqlConnection(connString))
+        {
+            con.Open();
+
+            // SUPERADMIN LOGIN
+            if (email.ToLower() == "superadmin@mail.com" && password == "admin123")
+            {
+                Session["SuperAdmin"] = true;
+                return RedirectToAction("Dashboard", "SuperAdmin");
+            }
+
+            // ADMIN LOGIN
+            string adminQuery = @"SELECT AdminID, FullName, Role, Email 
+                                  FROM Admins 
+                                  WHERE (Email=@Email OR FullName=@Email)
+                                  AND PasswordHash=@Password";
+
+            SqlCommand adminCmd = new SqlCommand(adminQuery, con);
+            adminCmd.Parameters.AddWithValue("@Email", email);
+            adminCmd.Parameters.AddWithValue("@Password", password);
+
+            SqlDataReader dr = adminCmd.ExecuteReader();
+
+            if (dr.Read())
+            {
+                string adminEmail = dr["Email"].ToString();
+                string adminName  = dr["FullName"].ToString();
+
+                Session["UserID"] = dr["AdminID"].ToString();
+                Session["FullName"] = adminName;
+                Session["Role"] = "Admin";
+
+                dr.Close();
+
+                // 🌟 Send welcome email AFTER APPROVAL LOGIN (only first time)
+                SendWelcomeEmail(adminEmail, adminName);
+
+                return RedirectToAction("Dashboard", "Admin");
+            }
+            dr.Close();
+
+            // USER LOGIN
+            string userQuery = @"SELECT UserID, FullName, Role, Email
+                                 FROM Users
+                                 WHERE (Email=@Email OR FullName=@Email)
+                                 AND PasswordHash=@Password";
+
+            SqlCommand userCmd = new SqlCommand(userQuery, con);
+            userCmd.Parameters.AddWithValue("@Email", email);
+            userCmd.Parameters.AddWithValue("@Password", password);
+
+            SqlDataReader dr2 = userCmd.ExecuteReader();
+
+            if (dr2.Read())
+            {
+                string userEmail = dr2["Email"].ToString();
+                string userName = dr2["FullName"].ToString();
+
+                Session["UserID"] = dr2["UserID"].ToString();
+                Session["FullName"] = userName;
+                Session["Role"] = "User";
+
+                dr2.Close();
+
+                // 🌟 Send welcome email here for Users
+                SendWelcomeEmail(userEmail, userName);
+
+                return RedirectToAction("Index", "Home");
+            }
+            dr2.Close();
+
+            TempData["error"] = "Invalid Login!";
+            return RedirectToAction("Login");
+        }
+    }
+    catch
+    {
+        TempData["error"] = "Login error!";
+        return RedirectToAction("Login");
+    }
+}
