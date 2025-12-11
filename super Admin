@@ -154,3 +154,89 @@ namespace PG.Controllers
     </tr>
 }
 </table>
+
+
+
+
+
+
+
+[HttpPost]
+public ActionResult Login(string Email, string Password)
+{
+    using (SqlConnection con = new SqlConnection(connString))
+    {
+        con.Open();
+
+        // 1) SuperAdmin Check
+        SqlCommand cmdSuper = new SqlCommand(
+            "SELECT COUNT(*) FROM SuperAdmin WHERE LOWER(Username)=@Email AND PasswordHash=@Password", con);
+
+        cmdSuper.Parameters.AddWithValue("@Email", Email.ToLower());
+        cmdSuper.Parameters.AddWithValue("@Password", Password);
+
+        int super = (int)cmdSuper.ExecuteScalar();
+        if (super == 1)
+        {
+            Session["SuperAdmin"] = Email;
+            return RedirectToAction("Dashboard", "SuperAdmin");
+        }
+
+        // 2) Admin Check
+        SqlCommand cmdAdmin = new SqlCommand(
+            "SELECT COUNT(*) FROM Admins WHERE LOWER(Email)=@Email AND PasswordHash=@Password", con);
+
+        cmdAdmin.Parameters.AddWithValue("@Email", Email.ToLower());
+        cmdAdmin.Parameters.AddWithValue("@Password", Password);
+
+        int admin = (int)cmdAdmin.ExecuteScalar();
+        if (admin == 1)
+        {
+            Session["Admin"] = Email;
+            return RedirectToAction("Dashboard", "Admin");
+        }
+
+        // 3) User Check
+        SqlCommand cmdUser = new SqlCommand(
+            "SELECT COUNT(*) FROM Users WHERE LOWER(Email)=@Email AND PasswordHash=@Password", con);
+
+        cmdUser.Parameters.AddWithValue("@Email", Email.ToLower());
+        cmdUser.Parameters.AddWithValue("@Password", Password);
+
+        int user = (int)cmdUser.ExecuteScalar();
+        if (user == 1)
+        {
+            Session["User"] = Email;
+            return RedirectToAction("Index", "UserPG");
+        }
+
+        TempData["error"] = "Invalid email or password!";
+        return RedirectToAction("Index", "Home", new { openLogin = "true" });
+    }
+}
+
+
+
+
+
+
+if (isAdmin)
+{
+    // Insert into PendingAdminRequests instead of Admins
+    string query = @"
+        INSERT INTO PendingAdminRequests 
+            (FullName, Email, PhoneNo, PasswordHash)
+        VALUES 
+            (@FullName, @Email, @PhoneNo, @PasswordHash)";
+
+    using (SqlCommand cmd = new SqlCommand(query, con))
+    {
+        cmd.Parameters.Add("@FullName", SqlDbType.NVarChar).Value = user.FullName ?? "";
+        cmd.Parameters.Add("@Email", SqlDbType.NVarChar).Value = email;
+        cmd.Parameters.Add("@PhoneNo", SqlDbType.NVarChar).Value = user.PhoneNo ?? "";
+        cmd.Parameters.Add("@PasswordHash", SqlDbType.NVarChar).Value = user.Password ?? "";
+        cmd.ExecuteNonQuery();
+    }
+
+    TempData["success"] = "Admin request submitted! Awaiting approval.";
+}
