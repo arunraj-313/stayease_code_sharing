@@ -1,3 +1,141 @@
+<div class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <h2 class="popup-title">Login</h2>
+
+            <form id="ajaxLoginForm">
+
+                <div class="form-group">
+                    <label class="popup-label">Email or Username</label>
+                    <input type="text" name="email" class="popup-input" placeholder="Enter your email" />
+                    <span id="emailError" class="text-danger" style="font-size:13px;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="popup-label">Password</label>
+                    <input type="password" name="password" class="popup-input" placeholder="Enter your password" />
+                    <span id="passwordError" class="text-danger" style="font-size:13px;"></span>
+                </div>
+
+                <span id="loginError" class="text-danger" style="font-size:14px; display:block; text-align:center; margin-top:5px;"></span>
+
+                <button type="submit" class="popup-btn">Login</button>
+
+                <div class="popup-links text-center mt-3">
+                    <a href="/Account/ForgotPassword">Forgot Password?</a><br />
+                    <a href="/Account/Register">New User? Register Here</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+.modal-content {
+    background: #0c1733;
+    padding: 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(245,210,106,0.4);
+    box-shadow: 0 0 25px rgba(0,0,0,0.6);
+    color: white;
+}
+
+.popup-title {
+    text-align: center;
+    color: #f5d26a;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.popup-label {
+    color: #f5d26a;
+    font-weight: 600;
+}
+
+.popup-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+}
+
+.popup-input:focus {
+    border-color: #f5d26a;
+    box-shadow: 0 0 8px rgba(245,210,106,0.5);
+}
+
+.popup-btn {
+    width: 100%;
+    background: #f5d26a;
+    color: #071028;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+.popup-btn:hover {
+    background: #ffe8a4;
+}
+
+.text-danger {
+    color: #ff6b6b !important;
+}
+
+
+
+
+<script>
+$("#ajaxLoginForm").submit(function (e) {
+    e.preventDefault();
+
+    $("#emailError").text("");
+    $("#passwordError").text("");
+    $("#loginError").text("");
+
+    $.ajax({
+        url: "/Account/AjaxLogin",
+        type: "POST",
+        data: {
+            email: $("input[name='email']").val(),
+            password: $("input[name='password']").val()
+        },
+        success: function (res) {
+
+            if (!res.success) {
+
+                if (res.field === "email") {
+                    $("#emailError").text(res.message);
+                }
+                else if (res.field === "password") {
+                    $("#passwordError").text(res.message);
+                }
+                else {
+                    $("#loginError").text(res.message);
+                }
+
+                $("#loginModal").modal("show");
+                return;
+            }
+
+            window.location.href = res.redirect;
+        }
+    });
+});
+</script>
+
+
+
+
+
+
+
 [HttpPost]
 public JsonResult AjaxLogin(string email, string password)
 {
