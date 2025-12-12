@@ -661,3 +661,52 @@ namespace StayEasePG.Controllers
         }
     }
 }
+
+
+
+[HttpPost]
+public ActionResult Login(string email, string password)
+{
+    bool hasError = false;
+
+    if (string.IsNullOrEmpty(email))
+    {
+        ModelState.AddModelError("email", "Enter email or username");
+        hasError = true;
+    }
+    if (string.IsNullOrEmpty(password))
+    {
+        ModelState.AddModelError("password", "Enter password");
+        hasError = true;
+    }
+
+    if (hasError)
+    {
+        TempData["OpenLoginPopup"] = true;
+        return View("~/Views/Home/Index.cshtml");
+    }
+
+    // -------------------------
+    // Your original login logic
+    // -------------------------
+
+    return RedirectToAction("Index", "Home");
+}
+
+
+
+
+<div class="form-group">
+    <label class="popup-label">Email or Username</label>
+    @Html.TextBox("email", null, new { @class = "popup-input", placeholder = "Enter your email" })
+
+    @Html.ValidationMessage("email", "", new { @class = "text-danger", style="font-size:13px;margin-top:3px;" })
+</div>
+
+
+<div class="form-group" style="margin-top:15px;">
+    <label class="popup-label">Password</label>
+    @Html.Password("password", null, new { @class = "popup-input", placeholder = "Enter your password" })
+
+    @Html.ValidationMessage("password", "", new { @class = "text-danger", style="font-size:13px;margin-top:3px;" })
+</div>
