@@ -1,3 +1,81 @@
+[HttpPost]
+public JsonResult AjaxLogin(string email, string password)
+{
+    if (string.IsNullOrEmpty(email))
+    {
+        return Json(new { success = false, field = "email", message = "Enter email or username" });
+    }
+
+    if (string.IsNullOrEmpty(password))
+    {
+        return Json(new { success = false, field = "password", message = "Enter password" });
+    }
+
+    string identifier = email.Trim().ToLower();
+    string pass = password.Trim();
+
+    using (SqlConnection con = new SqlConnection(connString))
+    {
+        con.Open();
+
+        // 1) SuperAdmin
+        using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM SuperAdmin WHERE LOWER(Username)=@Id AND PasswordHash=@P", con))
+        {
+            cmd.Parameters.AddWithValue("@Id", identifier);
+            cmd.Parameters.AddWithValue("@P", pass);
+
+            if ((int)cmd.ExecuteScalar() == 1)
+            {
+                Session["SuperAdmin"] = identifier;
+                return Json(new { success = true, redirect = Url.Action("Dashboard", "SuperAdmin") });
+            }
+        }
+
+        // 2) Admin
+        using (SqlCommand cmd = new SqlCommand("SELECT AdminID, FullName FROM Admins WHERE (LOWER(Email)=@Id OR LOWER(FullName)=@Id) AND PasswordHash=@P", con))
+        {
+            cmd.Parameters.AddWithValue("@Id", identifier);
+            cmd.Parameters.AddWithValue("@P", pass);
+
+            using (SqlDataReader dr = cmd.ExecuteReader())
+            {
+                if (dr.Read())
+                {
+                    Session["UserID"] = dr["AdminID"].ToString();
+                    Session["FullName"] = dr["FullName"].ToString();
+                    Session["Role"] = "Admin";
+
+                    return Json(new { success = true, redirect = Url.Action("Dashboard", "Admin") });
+                }
+            }
+        }
+
+        // 3) User
+        using (SqlCommand cmd = new SqlCommand("SELECT UserID, FullName FROM Users WHERE (LOWER(Email)=@Id OR LOWER(FullName)=@Id) AND PasswordHash=@P", con))
+        {
+            cmd.Parameters.AddWithValue("@Id", identifier);
+            cmd.Parameters.AddWithValue("@P", pass);
+
+            using (SqlDataReader dr = cmd.ExecuteReader())
+            {
+                if (dr.Read())
+                {
+                    Session["UserID"] = dr["UserID"].ToString();
+                    Session["FullName"] = dr["FullName"].ToString();
+                    Session["Role"] = "User";
+
+                    return Json(new { success = true, redirect = Url.Action("Index", "Home") });
+                }
+            }
+        }
+    }
+
+    // If invalid login
+    return Json(new { success = false, field = "login", message = "Invalid email/username or password!" });
+}
+
+
+
 @model StayEasePG.Models.UserModel
 @{
     ViewBag.Title = "Register";
