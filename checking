@@ -34,58 +34,82 @@
 
 
 .modal-content {
-    background: #0c1733;
-    padding: 30px;
-    border-radius: 16px;
-    border: 1px solid rgba(245,210,106,0.4);
-    box-shadow: 0 0 25px rgba(0,0,0,0.6);
-    color: white;
+/* FIX POPUP COLOR OVERRIDE */
+#loginModal .modal-content {
+    background: #0c1733 !important;
+    padding: 30px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(245,210,106,0.4) !important;
+    box-shadow: 0 0 25px rgba(0,0,0,0.6) !important;
+    color: white !important;
 }
 
-.popup-title {
+/* Title */
+#loginModal .popup-title {
     text-align: center;
-    color: #f5d26a;
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 20px;
+    color: #f5d26a !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
 }
 
-.popup-label {
-    color: #f5d26a;
-    font-weight: 600;
+/* Labels */
+#loginModal .popup-label {
+    color: #f5d26a !important;
+    font-weight: 600 !important;
 }
 
-.popup-input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: white;
+/* Inputs */
+#loginModal .popup-input {
+    width: 100% !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: white !important;
 }
 
-.popup-input:focus {
-    border-color: #f5d26a;
-    box-shadow: 0 0 8px rgba(245,210,106,0.5);
+#loginModal .popup-input:focus {
+    border-color: #f5d26a !important;
+    box-shadow: 0 0 8px rgba(245,210,106,0.5) !important;
 }
 
-.popup-btn {
-    width: 100%;
-    background: #f5d26a;
-    color: #071028;
-    border: none;
-    padding: 12px;
-    border-radius: 12px;
-    font-weight: 700;
-    margin-top: 10px;
+/* Button */
+#loginModal .popup-btn {
+    width: 100% !important;
+    background: #f5d26a !important;
+    color: #071028 !important;
+    border: none !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    margin-top: 10px !important;
 }
 
-.popup-btn:hover {
-    background: #ffe8a4;
+#loginModal .popup-btn:hover {
+    background: #ffe8a4 !important;
 }
 
-.text-danger {
+/* Links */
+#loginModal .popup-links a {
+    color: #f5d26a !important;
+    text-decoration: none !important;
+}
+
+#loginModal .popup-links a:hover {
+    color: white !important;
+}
+
+/* Error Text */
+#loginModal .text-danger {
     color: #ff6b6b !important;
+    font-size: 13px !important;
+}
+
+/* BACKDROP FIX */
+.modal-backdrop.show {
+    opacity: 0.9 !important;
+    background: rgba(0,0,0,0.7) !important;
+    backdrop-filter: blur(8px) !important;
 }
 
 
