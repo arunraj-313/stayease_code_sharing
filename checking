@@ -710,3 +710,131 @@ public ActionResult Login(string email, string password)
 
     @Html.ValidationMessage("password", "", new { @class = "text-danger", style="font-size:13px;margin-top:3px;" })
 </div>
+
+
+
+
+
+</head>
+
+<body>
+
+
+    <!-- NAVBAR -->
+    <div class="navbar navbar-inverse navbar-fixed-top navbar-custom">
+        <div class="container">
+            <div class="navbar-header">
+
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+
+                @Html.ActionLink("Stay-Ease", "Index", "Home", null, new { @class = "navbar-brand" })
+            </div>
+
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+
+                    @if (!string.IsNullOrEmpty(userRole) && userRole == "Admin")
+                    {
+                        <li class="dashboard-link">
+                            @Html.ActionLink("Admin Dashboard", "Dashboard", "Admin")
+                        </li>
+                    }
+                </ul>
+
+                <div class="header-buttons navbar-right">
+                    @if (Session["FullName"] != null)
+
+                    {
+                        <span class="welcome-text">Welcome, @Session["FullName"]!</span>
+                        <button class="logout-btn" onclick="window.location.href='@Url.Action("Logout","Account")'">Logout</button>
+                    }
+                    else if (current == "index" ||current == "about" ||current == "contact")
+                    {
+                        <button id="openLoginPopupButton" class="login-btn" data-toggle="modal" data-target="#loginModal">Login</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container body-content" style="margin-top:100px;">
+        @RenderBody()
+    </div>
+
+    <!-- LOGIN POPUP -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <h2 class="popup-title">Login</h2>
+
+                @using (Html.BeginForm("Login", "Account", FormMethod.Post))
+
+                {
+
+                    <div class="form-group">
+                        <label class="popup-label">Email or Username</label>
+                        @Html.TextBox("email", null, new { @class = "popup-input", placeholder = "Enter your email" })
+
+                        @Html.ValidationMessage("email", "", new { @class = "text-danger", style = "font-size:13px;margin-top:3px;" })
+                    </div>
+
+
+
+
+                    <div class="form-group" style="margin-top:15px;">
+                        <label class="popup-label">Password</label>
+                        @Html.Password("password", null, new { @class = "popup-input", placeholder = "Enter your password" })
+
+                        @Html.ValidationMessage("password", "", new { @class = "text-danger", style = "font-size:13px;margin-top:3px;" })
+                    </div>
+
+
+
+                    <button type="submit" class="popup-btn">Login</button>
+
+
+
+                    <div class="popup-links text-center mt-3">
+                        <a href="/Account/ForgotPassword">Forgot Password?</a><br />
+                        <a href="/Account/Register">New User? Register Here</a>
+                    </div>
+
+                }
+            </div>
+        </div>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+
+    <!-- AUTO-OPEN LOGIN POPUP -->
+    <script>
+    $(document).ready(function () {
+
+        // open popup when URL has ?openLogin=true
+        const urlParam = new URL(window.location.href).searchParams.get("openLogin");
+        if (urlParam === "true") {
+            $("#loginModal").modal("show");
+        }
+
+        // open popup when TempData["OpenLoginPopup"] is set
+        @if (TempData["OpenLoginPopup"] != null)
+        {
+            <text>
+                $("#loginModal").modal("show");
+            </text>
+        }
+    });
+    </script>
+
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>
