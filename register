@@ -1,132 +1,126 @@
-[HttpPost]
-public ActionResult Register(UserModel user)
-{
-    try
-    {
-        // ===================== VALIDATIONS START =====================
+             // 1️⃣ Email Validation
+                string email = (user.Email ?? "").Trim();
+                if (!email.Contains("@") || !email.Contains(".") || !email.EndsWith(".com"))
+                {
+                    TempData["error"] = "Invalid Email format. Example: name@gmail.com";
+                    return View(user);
+                }
 
-        // 1️⃣ Email Validation
-        string email = (user.Email ?? "").Trim();
-        if (!email.Contains("@") || !email.Contains(".") || !email.EndsWith(".com"))
-        {
-            TempData["error"] = "Invalid Email format. Example: name@gmail.com";
-            return View(user);
-        }
+                // 2️⃣ Phone Number Validation (Indian 10-digit)
+                string phone = (user.PhoneNo ?? "").Trim();
+                if (phone.Length != 10 || !phone.All(char.IsDigit) ||
+                    !(phone.StartsWith("6") || phone.StartsWith("7") || phone.StartsWith("8") || phone.StartsWith("9")))
+                {
+                    TempData["error"] = "Invalid Phone number ";
+                    return View(user);
+                }
 
-        // 2️⃣ Phone Number Validation (Indian 10-digit)
-        string phone = (user.PhoneNo ?? "").Trim();
-        if (phone.Length != 10 || !phone.All(char.IsDigit) ||
-            !(phone.StartsWith("6") || phone.StartsWith("7") || phone.StartsWith("8") || phone.StartsWith("9")))
-        {
-            TempData["error"] = "Phone number must be a 10-digit Indian number.";
-            return View(user);
-        }
+                // 3️⃣ ID Proof Validation
+                string idType = (user.IDProofType ?? "").Trim();
+                string idNumber = (user.IDProofNumber ?? "").Trim();
 
-        // 3️⃣ ID Proof Validation
-        string idType = (user.IDProofType ?? "").Trim();
-        string idNumber = (user.IDProofNumber ?? "").Trim();
+                if (idType == "Aadhaar")
+                {
+                    if (idNumber.Length != 12 || !idNumber.All(char.IsDigit))
+                    {
+                        TempData["error"] = "Aadhaar number must be 12 digits.";
+                        return View(user);
+                    }
+                }
+                else if (idType == "PAN")
+                {
+                    if (!Regex.IsMatch(idNumber, "^[A-Z]{5}[0-9]{4}[A-Z]$"))
+                    {
+                        TempData["error"] = "PAN number must be in format: ABCDE1234F";
+                        return View(user);
+                    }
+                }
 
-        if (idType == "Aadhaar")
-        {
-            if (idNumber.Length != 12 || !idNumber.All(char.IsDigit))
+                // 4️⃣ Password Validation
+                string pass = (user.Password ?? "").Trim();
+
+                if (pass.Length < 6 || pass.Length > 12)
+                {
+                    TempData["error"] = "Password must be 6–12 characters.";
+                    return View(user);
+                }
+                if (!pass.Any(char.IsUpper))
+                {
+                    TempData["error"] = "Password must contain at least 1 uppercase letter.";
+                    return View(user);
+                }
+                if (!pass.Any(char.IsDigit))
+                {
+                    TempData["error"] = "Password must contain at least 1 number.";
+                    return View(user);
+                }
+                if (!pass.Any(ch => "!@#$%^&*()".Contains(ch)))
+                {
+                    TempData["error"] = "Password must contain at least 1 special character.";
+                    return View(user);
+                }
+
+                // ===================== VALIDATIONS END =====================
+
+                // Your remaining code continues ↓↓↓
+
+                // Normalize email and role
+                string emailNormalized = email.ToLowerInvariant();
+                string role = (user.Role ?? string.Empty).Trim();
+
+                using (SqlConnection con = new SqlConnection(connString))
+                {
+                    con.Open();
+
+                    // Count occurrences...
+                    int userCount = 0, adminCount = 0;
+
+                    using (SqlCommand cmdUsers = new SqlCommand("SELECT COUNT(*) FROM Users WHERE LOWER(Email) = @Email", con))
+                    {
+                        cmdUsers.Parameters.Add("@Email", SqlDbType.NVarChar, 256).Value = emailNormalized;
+                        userCount = (int)cmdUsers.ExecuteScalar();
+                    }
+                    using (SqlCommand cmdAdmins = new SqlCommand("SELECT COUNT(*) FROM Admins WHERE LOWER(Email) = @Email", con))
+                    {
+                        cmdAdmins.Parameters.Add("@Email", SqlDbType.NVarChar, 256).Value = emailNormalized;
+                        adminCount = (int)cmdAdmins.ExecuteScalar();
+                    }
+
+                    // Duplicate checks...
+                    if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (adminCount > 0)
+                        {
+                            TempData["error"] = "Email already exists in Admins!";
+                            return View(user);
+                        }
+                    }
+                    else
+                    {
+                        if (userCount > 0)
+                        {
+                            TempData["error"] = "Email already exists in Users!";
+                            return View(user);
+                        }
+                    }
+                }
+
+                // OTP logic continues...
+                Random rnd = new Random();
+                int otp = rnd.Next(100000, 999999);
+
+                // Save session & send OTP...
+                // (rest of your code)
+
+                return RedirectToAction("VerifyOTP");
+            }
+            catch (Exception ex)
             {
-                TempData["error"] = "Aadhaar number must be 12 digits.";
+                TempData["error"] = "Something went wrong! " + ex.Message;
                 return View(user);
             }
         }
-        else if (idType == "PAN")
-        {
-            if (!Regex.IsMatch(idNumber, "^[A-Z]{5}[0-9]{4}[A-Z]$"))
-            {
-                TempData["error"] = "PAN number must be in format: ABCDE1234F";
-                return View(user);
-            }
-        }
 
-        // 4️⃣ Password Validation
-        string pass = (user.Password ?? "").Trim();
-
-        if (pass.Length < 6 || pass.Length > 12)
-        {
-            TempData["error"] = "Password must be 6–12 characters.";
-            return View(user);
-        }
-        if (!pass.Any(char.IsUpper))
-        {
-            TempData["error"] = "Password must contain at least 1 uppercase letter.";
-            return View(user);
-        }
-        if (!pass.Any(char.IsDigit))
-        {
-            TempData["error"] = "Password must contain at least 1 number.";
-            return View(user);
-        }
-        if (!pass.Any(ch => "!@#$%^&*()".Contains(ch)))
-        {
-            TempData["error"] = "Password must contain at least 1 special character.";
-            return View(user);
-        }
-
-        // ===================== VALIDATIONS END =====================
-
-        // Your remaining code continues ↓↓↓
-
-        // Normalize email and role
-        string emailNormalized = email.ToLowerInvariant();
-        string role = (user.Role ?? string.Empty).Trim();
-
-        using (SqlConnection con = new SqlConnection(connString))
-        {
-            con.Open();
-
-            // Count occurrences...
-            int userCount = 0, adminCount = 0;
-
-            using (SqlCommand cmdUsers = new SqlCommand("SELECT COUNT(*) FROM Users WHERE LOWER(Email) = @Email", con))
-            {
-                cmdUsers.Parameters.Add("@Email", SqlDbType.NVarChar, 256).Value = emailNormalized;
-                userCount = (int)cmdUsers.ExecuteScalar();
-            }
-            using (SqlCommand cmdAdmins = new SqlCommand("SELECT COUNT(*) FROM Admins WHERE LOWER(Email) = @Email", con))
-            {
-                cmdAdmins.Parameters.Add("@Email", SqlDbType.NVarChar, 256).Value = emailNormalized;
-                adminCount = (int)cmdAdmins.ExecuteScalar();
-            }
-
-            // Duplicate checks...
-            if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
-            {
-                if (adminCount > 0)
-                {
-                    TempData["error"] = "Email already exists in Admins!";
-                    return View(user);
-                }
-            }
-            else
-            {
-                if (userCount > 0)
-                {
-                    TempData["error"] = "Email already exists in Users!";
-                    return View(user);
-                }
-            }
-        }
-
-        // OTP logic continues...
-        Random rnd = new Random();
-        int otp = rnd.Next(100000, 999999);
-
-        // Save session & send OTP...
-        // (rest of your code)
-
-        return RedirectToAction("VerifyOTP");
-    }
-    catch (Exception ex)
-    {
-        TempData["error"] = "Something went wrong! " + ex.Message;
-        return View(user);
-    }
-}
 
 
 
